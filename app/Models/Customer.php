@@ -18,6 +18,11 @@ class Customer extends Authenticatable
         return ['email_verified_at' => 'datetime', 'password' => 'hashed'];
     }
 
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new \App\Notifications\CustomerResetPassword($token));
+    }
+
     public function addresses() { return $this->hasMany(CustomerAddress::class); }
     public function orders() { return $this->hasMany(Order::class); }
     public function wishlistItems() { return $this->hasMany(WishlistItem::class); }

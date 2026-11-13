@@ -23,8 +23,8 @@ class AccountController extends Controller
     public function login(Request $request)
     {
         $data = $request->validate(['email' => 'required|email', 'password' => 'required']);
-        if (! Auth::guard('customer')->attempt($data, true)) {
-            throw ValidationException::withMessages(['email' => 'Invalid credentials.']);
+        if (! Auth::guard('customer')->attempt($data, $request->boolean('remember'))) {
+            throw ValidationException::withMessages(['password' => 'Oops, that\'s not a match. Check your email and password and try again.']);
         }
         $request->session()->regenerate();
 
@@ -38,12 +38,18 @@ class AccountController extends Controller
 
     public function register(Request $request)
     {
+        if ($request->filled('first_name') || $request->filled('last_name')) {
+            $request->merge(['name' => trim($request->input('first_name').' '.$request->input('last_name'))]);
+        }
         $data = $request->validate([
+            'first_name' => 'sometimes|required|string|max:60',
+            'last_name' => 'sometimes|required|string|max:60',
             'name' => 'required|string|max:120',
             'email' => 'required|email|max:120|unique:customers,email',
             'phone' => 'nullable|string|max:20',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => 'required|string|min:8',
         ]);
+        unset($data['first_name'], $data['last_name']);
         $customer = Customer::create($data + ['email_verified_at' => now()]);
         Auth::guard('customer')->login($customer, true);
 
@@ -150,21 +156,85 @@ class AccountController extends Controller
         return back()->with('success', 'Review submitted for moderation.');
     }
 
+    public function settings()
+    {
+        $customer = Auth::guard('customer')->user();
+
+        return Inertia::render('Account/Settings', [
+            'customer' => $customer->only(['name', 'email', 'phone']),
+            'addresses' => $customer->addresses()->orderByDesc('is_default')->latest()->get(['id', 'label', 'line1', 'line2', 'city', 'phone', 'is_default']),
+        ]);
+    }
+
     public function profileUpdate(Request $request)
     {
         $customer = Auth::guard('customer')->user();
         $data = $request->validate([
             'name' => 'required|string|max:120',
             'phone' => 'nullable|string|max:20',
-            'password' => 'nullable|string|min:8|confirmed',
         ]);
-        $customer->name = $data['name'];
-        $customer->phone = $data['phone'];
-        if (! empty($data['password'])) {
-            $customer->password = Hash::make($data['password']);
+        $customer->update($data);
+
+        return back()->with('success', 'Personal info updated.');
+    }
+
+    public function passwordUpdate(Request $request)
+    {
+        $customer = Auth::guard('customer')->user();
+        $request->validate([
+            'current_password' => 'required|string',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+        if (! Hash::check($request->current_password, $customer->password)) {
+            throw ValidationException::withMessages(['current_password' => 'That is not your current password.']);
         }
+        $customer->password = Hash::make($request->password);
         $customer->save();
 
-        return back()->with('success', 'Profile updated.');
+        return back()->with('success', 'Password changed.');
+    }
+
+    public function addressStore(Request $request)
+    {
+        $customer = Auth::guard('customer')->user();
+        $data = $request->validate([
+            'label' => 'required|string|max:40',
+            'line1' => 'required|string|max:200',
+            'line2' => 'nullable|string|max:200',
+            'city' => 'required|string|max:100',
+            'phone' => 'nullable|string|max:20',
+            'is_default' => 'boolean',
+        ]);
+        $isFirst = ! $customer->addresses()->exists();
+        if (! empty($data['is_default']) || $isFirst) {
+            $customer->addresses()->update(['is_default' => false]);
+            $data['is_default'] = true;
+        }
+        $customer->addresses()->create($data);
+
+        return back()->with('success', 'Address added.');
+    }
+
+    public function addressDestroy(int $id)
+    {
+        $customer = Auth::guard('customer')->user();
+        $address = $customer->addresses()->findOrFail($id);
+        $wasDefault = $address->is_default;
+        $address->delete();
+        if ($wasDefault) {
+            $customer->addresses()->latest()->first()?->update(['is_default' => true]);
+        }
+
+        return back()->with('success', 'Address removed.');
+    }
+
+    public function addressDefault(int $id)
+    {
+        $customer = Auth::guard('customer')->user();
+        $address = $customer->addresses()->findOrFail($id);
+        $customer->addresses()->update(['is_default' => false]);
+        $address->update(['is_default' => true]);
+
+        return back();
     }
 }

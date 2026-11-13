@@ -47,6 +47,10 @@ Route::prefix('account')->name('account.')->group(function () {
         Route::post('/login', [AccountController::class, 'login'])->name('login.post');
         Route::get('/register', [AccountController::class, 'registerForm'])->name('register');
         Route::post('/register', [AccountController::class, 'register'])->name('register.post');
+        Route::get('/forgot-password', [\App\Http\Controllers\Account\CustomerPasswordController::class, 'forgotForm'])->name('password.request');
+        Route::post('/forgot-password', [\App\Http\Controllers\Account\CustomerPasswordController::class, 'sendLink'])->middleware('throttle:6,1')->name('password.email');
+        Route::get('/reset-password/{token}', [\App\Http\Controllers\Account\CustomerPasswordController::class, 'resetForm'])->name('password.reset');
+        Route::post('/reset-password', [\App\Http\Controllers\Account\CustomerPasswordController::class, 'reset'])->middleware('throttle:6,1')->name('password.store');
     });
 
     Route::middleware('auth:customer')->group(function () {
@@ -60,7 +64,13 @@ Route::prefix('account')->name('account.')->group(function () {
         Route::post('/saved-searches/toggle', [\App\Http\Controllers\Storefront\SavedSearchController::class, 'toggle'])->name('saved-searches.toggle');
         Route::delete('/saved-searches/{savedSearch}', [\App\Http\Controllers\Storefront\SavedSearchController::class, 'destroy'])->name('saved-searches.destroy');
         Route::post('/reviews', [AccountController::class, 'reviewStore'])->name('reviews.store');
+        Route::get('/settings', [AccountController::class, 'settings'])->name('settings');
+        Route::get('/recently-viewed', fn () => \Inertia\Inertia::render('Account/RecentlyViewed'))->name('recently-viewed');
         Route::patch('/profile', [AccountController::class, 'profileUpdate'])->name('profile.update');
+        Route::put('/password', [AccountController::class, 'passwordUpdate'])->name('password.update');
+        Route::post('/addresses', [AccountController::class, 'addressStore'])->name('addresses.store');
+        Route::delete('/addresses/{id}', [AccountController::class, 'addressDestroy'])->whereNumber('id')->name('addresses.destroy');
+        Route::post('/addresses/{id}/default', [AccountController::class, 'addressDefault'])->whereNumber('id')->name('addresses.default');
     });
 });
 

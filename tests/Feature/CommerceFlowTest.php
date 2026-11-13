@@ -105,13 +105,17 @@ it('completes a POS sale, deducts stock and records payment', function () {
     $inv = app(InventoryService::class);
     $cashier = User::where('email', 'cashier@queensons.com')->first();
     $register = Register::first();
-    $before = $inv->available($this->variant->id, $this->warehouse->id);
+    // Sell from the register's own branch warehouse, and make sure it holds stock
+    // (seeded stock levels are random, so this test was intermittently failing).
+    $warehouseId = $register->branch->warehouses()->value('id');
+    $inv->record($this->variant->id, $warehouseId, 5, 'purchase_receipt');
+    $before = $inv->available($this->variant->id, $warehouseId);
 
     $session = $pos->openSession($register->id, $cashier->id, 500000);
     $sale = $pos->completeSale($session, [['variant_id' => $this->variant->id, 'qty' => 1]], 'cash');
 
     expect($sale->status)->toBe('completed');
-    expect($inv->available($this->variant->id, $this->warehouse->id))->toBe($before - 1);
+    expect($inv->available($this->variant->id, $warehouseId))->toBe($before - 1);
     expect($sale->payments()->where('status', 'verified')->count())->toBe(1);
 
     // Return the item: stock comes back.

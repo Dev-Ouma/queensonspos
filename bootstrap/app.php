@@ -25,6 +25,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo(function (Request $request) {
             return $request->is('account*') ? route('account.login') : route('login');
         });
+
+        // Signed-in users who open a sign-in or register page go to their own area.
+        $middleware->redirectUsersTo(function (Request $request) {
+            return $request->is('account*') ? route('account.dashboard') : route('admin.dashboard');
+        });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
