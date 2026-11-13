@@ -58,7 +58,7 @@ class StorefrontContent
             'socials' => [
                 'instagram' => 'https://instagram.com/queensons',
                 'tiktok' => 'https://tiktok.com/@queensons',
-                'whatsapp' => 'https://wa.me/254700000000',
+                'whatsapp' => 'https://wa.me/254100214198',
             ],
             'social_proof_enabled' => true,
             'free_delivery_threshold_cents' => 500000,
