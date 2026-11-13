@@ -6,29 +6,26 @@ const form = useForm({ email: '', password: '' });
 </script>
 
 <template>
-    <Head title="Sign In — QUEENSONS" />
+    <Head title="Sign In" />
     <StorefrontLayout>
         <div class="max-w-md mx-auto px-4 py-16">
             <div class="text-center mb-8">
-                <img src="/logo.svg" alt="QUEENSONS crown logo" class="w-14 h-14 mx-auto mb-4 animate-float" />
-                <p class="eyebrow text-gold-dark mb-2">Your Account</p>
-                <h1 class="font-display text-3xl">Welcome back</h1>
-                <div class="rule-gold max-w-[100px] mx-auto mt-4"></div>
+                <h1 class="text-2xl md:text-3xl font-bold">Sign in to your account</h1>
             </div>
             <form @submit.prevent="form.post('/account/login')" class="space-y-4">
                 <div>
-                    <label class="text-xs text-gray-500">Email</label>
-                    <input v-model="form.email" type="email" required class="w-full rounded border-gray-200 mt-1" />
+                    <label for="login-email" class="text-sm font-semibold">Email</label>
+                    <input id="login-email" v-model="form.email" autocomplete="email" type="email" required class="w-full rounded-lg border-gray-300 mt-1" />
                     <div v-if="form.errors.email" class="text-red-500 text-xs mt-1">{{ form.errors.email }}</div>
                 </div>
                 <div>
-                    <label class="text-xs text-gray-500">Password</label>
-                    <input v-model="form.password" type="password" required class="w-full rounded border-gray-200 mt-1" />
+                    <label for="login-password" class="text-sm font-semibold">Password</label>
+                    <input id="login-password" v-model="form.password" autocomplete="current-password" type="password" required class="w-full rounded-lg border-gray-300 mt-1" />
                 </div>
-                <button :disabled="form.processing" class="w-full bg-navy-700 hover:bg-navy-600 text-white rounded-full py-3 text-sm font-semibold">Sign In</button>
+                <button :disabled="form.processing" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-full py-3 text-sm font-semibold">Sign in</button>
             </form>
             <p class="text-center text-sm text-gray-500 mt-6">
-                New to QUEENSONS? <Link href="/account/register" class="text-emerald-600 hover:underline">Create an account</Link>
+                New to QUEENSONS? <Link href="/account/register" class="underline font-semibold text-navy-900">Create an account</Link>
             </p>
         </div>
     </StorefrontLayout>

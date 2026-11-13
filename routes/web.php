@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\Route;
 */
 Route::get('/', [ShopController::class, 'home'])->name('home');
 Route::get('/shop', [ShopController::class, 'index'])->name('shop');
+Route::get('/search/suggest', [ShopController::class, 'suggest'])->middleware('throttle:60,1')->name('search.suggest');
 Route::get('/product/{slug}', [ShopController::class, 'show'])->name('product.show');
 Route::get('/page/{slug}', [ShopController::class, 'page'])->name('cms.page');
 
@@ -55,6 +56,9 @@ Route::prefix('account')->name('account.')->group(function () {
         Route::get('/orders/{reference}', [AccountController::class, 'orderShow'])->name('orders.show');
         Route::get('/wishlist', [AccountController::class, 'wishlist'])->name('wishlist');
         Route::post('/wishlist/toggle', [AccountController::class, 'wishlistToggle'])->name('wishlist.toggle');
+        Route::get('/saved-searches', [\App\Http\Controllers\Storefront\SavedSearchController::class, 'index'])->name('saved-searches');
+        Route::post('/saved-searches/toggle', [\App\Http\Controllers\Storefront\SavedSearchController::class, 'toggle'])->name('saved-searches.toggle');
+        Route::delete('/saved-searches/{savedSearch}', [\App\Http\Controllers\Storefront\SavedSearchController::class, 'destroy'])->name('saved-searches.destroy');
         Route::post('/reviews', [AccountController::class, 'reviewStore'])->name('reviews.store');
         Route::patch('/profile', [AccountController::class, 'profileUpdate'])->name('profile.update');
     });

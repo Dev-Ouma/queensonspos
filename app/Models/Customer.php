@@ -21,5 +21,6 @@ class Customer extends Authenticatable
     public function addresses() { return $this->hasMany(CustomerAddress::class); }
     public function orders() { return $this->hasMany(Order::class); }
     public function wishlistItems() { return $this->hasMany(WishlistItem::class); }
+    public function savedSearches() { return $this->hasMany(SavedSearch::class); }
     public function loyaltyTransactions() { return $this->hasMany(LoyaltyTransaction::class); }
 }

@@ -5,7 +5,8 @@ export function img(path) {
 
 export function kes(cents) {
     if (cents === null || cents === undefined) return '—';
-    return 'KES ' + (cents / 100).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const whole = cents % 100 === 0;
+    return 'KES ' + (cents / 100).toLocaleString('en-KE', { minimumFractionDigits: whole ? 0 : 2, maximumFractionDigits: 2 });
 }
 
 /* Placeholder fashion photos for products that have no uploaded image yet. */

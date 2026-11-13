@@ -6,38 +6,38 @@ defineProps({ order: Object });
 </script>
 
 <template>
-    <Head title="Order Confirmed — QUEENSONS" />
+    <Head title="Order confirmed" />
     <StorefrontLayout>
-        <div class="max-w-xl mx-auto px-4 py-16 text-center">
-            <div class="relative w-20 h-20 mx-auto mb-6">
-                <span class="absolute -top-1 -left-3 text-gold animate-fade-up" style="animation-delay:.5s" aria-hidden="true">✦</span>
-                <span class="absolute -top-2 right-0 text-gold-light text-xs animate-fade-up" style="animation-delay:.7s" aria-hidden="true">✦</span>
-                <span class="absolute bottom-0 -right-4 text-gold text-sm animate-fade-up" style="animation-delay:.9s" aria-hidden="true">✦</span>
-                <div class="w-20 h-20 bg-navy-800 rounded-full flex items-center justify-center animate-fade-up">
-                    <img src="/logo.svg" alt="" class="w-11 h-11" />
+        <div class="max-w-3xl mx-auto px-4 py-10">
+            <div class="flex items-start gap-4">
+                <div class="w-12 h-12 rounded-full bg-green-600 text-white flex items-center justify-center shrink-0" aria-hidden="true">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold">Thanks, your order is confirmed!</h1>
+                    <p class="text-gray-600 mt-1">We sent a confirmation to <b>{{ order.email }}</b>. Asante sana for shopping with QUEENSONS.</p>
                 </div>
             </div>
-            <p class="eyebrow text-gold-dark mb-2 animate-fade-up" style="animation-delay:.15s">Order Confirmed</p>
-            <h1 class="font-display text-4xl animate-fade-up" style="animation-delay:.25s">Asante sana!</h1>
-            <p class="text-gray-500 mt-3 animate-fade-up" style="animation-delay:.35s">Your order has been received and payment confirmed.</p>
-            <div class="rule-gold max-w-[120px] mx-auto mt-5"></div>
-            <div class="bg-gray-50 rounded-xl p-6 mt-8 text-left">
-                <div class="flex justify-between text-sm mb-4">
-                    <span class="text-gray-500">Order reference</span>
-                    <span class="font-mono font-semibold">{{ order.reference }}</span>
+
+            <div class="border border-gray-200 rounded-2xl mt-8">
+                <div class="px-5 py-3 border-b border-gray-200 flex flex-wrap justify-between gap-2 text-sm">
+                    <span>Order number <b class="font-mono">{{ order.reference }}</b></span>
+                    <span class="text-green-700 font-semibold capitalize">{{ order.status }}</span>
                 </div>
-                <div v-for="(i, idx) in order.items" :key="idx" class="flex justify-between text-sm py-1">
-                    <span>{{ i.qty }}× {{ i.name_snapshot }}</span>
-                    <span>{{ kes(i.line_total_cents) }}</span>
+                <div class="divide-y divide-gray-200">
+                    <div v-for="(i, idx) in order.items" :key="idx" class="px-5 py-3 flex justify-between text-sm">
+                        <span>{{ i.name_snapshot }} <span class="text-gray-500">× {{ i.qty }}</span></span>
+                        <span class="font-semibold">{{ kes(i.line_total_cents) }}</span>
+                    </div>
                 </div>
-                <div class="flex justify-between font-bold border-t pt-3 mt-3">
-                    <span>Total paid</span><span>{{ kes(order.total_cents) }}</span>
+                <div class="px-5 py-4 border-t border-gray-200 flex justify-between font-bold text-lg">
+                    <span>Total</span><span>{{ kes(order.total_cents) }}</span>
                 </div>
             </div>
-            <p class="text-xs text-gray-400 mt-4">A confirmation has been sent to {{ order.email }}.</p>
-            <div class="flex gap-3 justify-center mt-8">
-                <Link href="/shop" class="bg-navy-700 text-white rounded-full px-6 py-3 text-sm">Continue shopping</Link>
-                <Link href="/account/register" class="border border-gray-300 rounded-full px-6 py-3 text-sm hover:border-navy-700">Create an account</Link>
+
+            <div class="mt-8 flex flex-wrap gap-3">
+                <Link href="/account/orders" class="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full px-7 py-3 text-sm font-semibold">View purchases</Link>
+                <Link href="/shop" class="border-2 border-navy-900 rounded-full px-7 py-3 text-sm font-semibold">Continue shopping</Link>
             </div>
         </div>
     </StorefrontLayout>

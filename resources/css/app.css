@@ -116,3 +116,8 @@
     transform: translateY(-4px);
     box-shadow: 0 12px 24px -12px rgba(9, 43, 96, .35);
 }
+
+/* Product page sticky buy bar: lift floating buttons above it on small screens */
+@media (max-width: 1023px) {
+    .has-buybar .wa-float { bottom: 5.5rem; }
+}

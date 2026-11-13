@@ -1,5 +1,5 @@
 <script setup>
-import StorefrontLayout from '@/Layouts/StorefrontLayout.vue';
+import AccountShell from '@/Components/AccountShell.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { kes } from '@/money';
 
@@ -8,63 +8,48 @@ const form = useForm({ name: props.customer.name, phone: props.customer.phone, p
 </script>
 
 <template>
-    <Head title="My Account — QUEENSONS" />
-    <StorefrontLayout>
-        <div class="max-w-5xl mx-auto px-4 py-12">
-            <div class="flex items-center justify-between mb-8">
-                <h1 class="font-display text-3xl">Hello, {{ customer.name.split(' ')[0] }}</h1>
-                <Link href="/account/logout" method="post" as="button" class="text-sm text-gray-400 hover:text-red-500">Sign out</Link>
+    <Head title="My QUEENSONS" />
+    <AccountShell>
+        <p class="text-lg">Hi <b>{{ customer.name.split(' ')[0] }}</b>, welcome back.</p>
+        <div class="grid sm:grid-cols-3 gap-4 mt-5">
+            <Link href="/account/orders" class="border border-gray-200 rounded-2xl p-5 hover:border-navy-900">
+                <div class="text-sm text-gray-500">Purchases</div>
+                <div class="text-2xl font-bold mt-1">{{ recentOrders.length }}<span class="text-sm font-normal text-gray-500"> recent</span></div>
+            </Link>
+            <Link href="/account/wishlist" class="border border-gray-200 rounded-2xl p-5 hover:border-navy-900">
+                <div class="text-sm text-gray-500">Watchlist</div>
+                <div class="text-2xl font-bold mt-1">{{ wishlistCount }}<span class="text-sm font-normal text-gray-500"> items</span></div>
+            </Link>
+            <div class="border border-gray-200 rounded-2xl p-5">
+                <div class="text-sm text-gray-500">Loyalty points</div>
+                <div class="text-2xl font-bold mt-1 text-gold-dark">{{ customer.loyalty_points }}</div>
             </div>
-
-            <div class="grid md:grid-cols-3 gap-4 mb-10">
-                <Link href="/account/orders" class="bg-navy-50 rounded-xl p-5 hover:shadow transition">
-                    <div class="text-xs uppercase text-gray-500">Orders</div>
-                    <div class="text-xl font-bold text-navy-700 mt-1">View history →</div>
-                </Link>
-                <Link href="/account/wishlist" class="bg-navy-50 rounded-xl p-5 hover:shadow transition">
-                    <div class="text-xs uppercase text-gray-500">Wishlist</div>
-                    <div class="text-xl font-bold text-navy-700 mt-1">{{ wishlistCount }} saved</div>
-                </Link>
-                <div class="bg-gold/10 rounded-xl p-5 border border-gold/30">
-                    <div class="text-xs uppercase text-gray-500">Loyalty points</div>
-                    <div class="text-xl font-bold text-gold-dark mt-1">{{ customer.loyalty_points }} pts</div>
-                </div>
-            </div>
-
-            <h2 class="font-semibold mb-4">Recent Orders</h2>
-            <div v-if="recentOrders.length" class="space-y-3 mb-10">
-                <Link v-for="o in recentOrders" :key="o.reference" :href="`/account/orders/${o.reference}`"
-                      class="flex justify-between items-center border border-gray-100 rounded-xl p-4 hover:border-navy-700 transition text-sm">
-                    <div>
-                        <div class="font-mono font-semibold">{{ o.reference }}</div>
-                        <div class="text-xs text-gray-400">{{ o.placed_at }}</div>
-                    </div>
-                    <span class="text-xs bg-navy-50 rounded-full px-3 py-1 capitalize">{{ o.status.replaceAll('_', ' ') }}</span>
-                    <span class="font-semibold">{{ kes(o.total_cents) }}</span>
-                </Link>
-            </div>
-            <p v-else class="text-gray-400 text-sm mb-10">No orders yet. <Link href="/shop" class="text-emerald-600 underline">Start shopping</Link></p>
-
-            <h2 class="font-semibold mb-4">Profile</h2>
-            <form @submit.prevent="form.patch('/account/profile')" class="grid md:grid-cols-2 gap-4 max-w-xl">
-                <div>
-                    <label class="text-xs text-gray-500">Name</label>
-                    <input v-model="form.name" class="w-full rounded border-gray-200 text-sm mt-1" />
-                </div>
-                <div>
-                    <label class="text-xs text-gray-500">Phone</label>
-                    <input v-model="form.phone" class="w-full rounded border-gray-200 text-sm mt-1" />
-                </div>
-                <div>
-                    <label class="text-xs text-gray-500">New password (optional)</label>
-                    <input v-model="form.password" type="password" class="w-full rounded border-gray-200 text-sm mt-1" />
-                </div>
-                <div>
-                    <label class="text-xs text-gray-500">Confirm password</label>
-                    <input v-model="form.password_confirmation" type="password" class="w-full rounded border-gray-200 text-sm mt-1" />
-                </div>
-                <button :disabled="form.processing" class="bg-navy-700 text-white rounded-full px-6 py-2 text-sm w-fit">Save changes</button>
-            </form>
         </div>
-    </StorefrontLayout>
+
+        <div class="mt-10 flex items-end justify-between">
+            <h2 class="text-xl font-bold">Recent purchases</h2>
+            <Link href="/account/orders" class="text-sm underline">See all</Link>
+        </div>
+        <div v-if="recentOrders.length" class="mt-3 border border-gray-200 rounded-2xl divide-y divide-gray-200">
+            <Link v-for="o in recentOrders" :key="o.reference" :href="`/account/orders/${o.reference}`"
+                  class="flex flex-wrap items-center justify-between gap-3 p-4 text-sm hover:bg-gray-50">
+                <div>
+                    <div class="font-bold">Order {{ o.reference }}</div>
+                    <div class="text-xs text-gray-500">Placed {{ o.placed_at }}</div>
+                </div>
+                <span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold capitalize">{{ o.status.replaceAll('_', ' ') }}</span>
+                <span class="font-bold">{{ kes(o.total_cents) }}</span>
+            </Link>
+        </div>
+        <p v-else class="mt-3 text-sm text-gray-500">No purchases yet. <Link href="/shop" class="underline">Start shopping</Link></p>
+
+        <h2 class="text-xl font-bold mt-10">Personal info</h2>
+        <form @submit.prevent="form.patch('/account/profile')" class="mt-3 border border-gray-200 rounded-2xl p-5 grid md:grid-cols-2 gap-4 max-w-2xl">
+            <label class="block text-sm">Name<input v-model="form.name" autocomplete="name" class="w-full rounded-lg border-gray-300 text-sm mt-1" /></label>
+            <label class="block text-sm">Phone<input v-model="form.phone" autocomplete="tel" class="w-full rounded-lg border-gray-300 text-sm mt-1" /></label>
+            <label class="block text-sm">New password (optional)<input v-model="form.password" type="password" autocomplete="new-password" class="w-full rounded-lg border-gray-300 text-sm mt-1" /></label>
+            <label class="block text-sm">Confirm password<input v-model="form.password_confirmation" type="password" autocomplete="new-password" class="w-full rounded-lg border-gray-300 text-sm mt-1" /></label>
+            <button :disabled="form.processing" class="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full px-6 py-2.5 text-sm font-semibold w-fit">Save changes</button>
+        </form>
+    </AccountShell>
 </template>

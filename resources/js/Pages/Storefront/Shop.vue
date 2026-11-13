@@ -2,10 +2,11 @@
 import StorefrontLayout from '@/Layouts/StorefrontLayout.vue';
 import ProductCard from '@/Components/ProductCard.vue';
 import Pagination from '@/Components/Pagination.vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { reactive, ref, computed } from 'vue';
 
-const props = defineProps({ products: Object, categories: Array, filters: Object, colorOptions: Array, sizeOptions: Array });
+const props = defineProps({ products: Object, categories: Array, filters: Object, colorOptions: Array, sizeOptions: Array, searchSaved: Boolean });
+const page = usePage();
 
 const f = reactive({ sort: '', ...Object.fromEntries(Object.entries(props.filters).filter(([, v]) => v != null)) });
 const view = ref('grid');
@@ -24,6 +25,10 @@ const chips = computed(() => ['category', 'color', 'size', 'min_price', 'max_pri
 
 function apply() {
     router.get('/shop', Object.fromEntries(Object.entries(f).filter(([, v]) => v)), { preserveState: true, preserveScroll: true });
+}
+function saveSearch() {
+    if (!page.props.auth?.customer) return router.visit('/account/login');
+    router.post('/account/saved-searches/toggle', Object.fromEntries(Object.entries(props.filters).filter(([, v]) => v)), { preserveScroll: true });
 }
 function set(k, v) { f[k] = f[k] === v ? '' : v; apply(); }
 function clear(k) { f[k] = ''; apply(); }
@@ -108,10 +113,18 @@ function reset() { Object.keys(f).forEach(k => { if (k !== 'q') f[k] = ''; }); a
                 <!-- Results -->
                 <div class="flex-1 min-w-0">
                     <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 pb-3">
-                        <div class="text-sm"><b>{{ products.total }}</b> results<span v-if="f.q"> for <b>{{ f.q }}</b></span></div>
+                        <div class="flex items-center gap-4">
+                            <div class="text-sm"><b>{{ products.total }}</b> results<span v-if="f.q"> for <b>{{ f.q }}</b></span></div>
+                            <button @click="saveSearch" :aria-pressed="searchSaved"
+                                    :class="['rounded-full border px-3 py-1 text-xs font-semibold flex items-center gap-1.5', searchSaved ? 'border-navy-900 bg-navy-900 text-white' : 'border-gray-300 hover:border-navy-900']">
+                                <svg class="w-3.5 h-3.5" :fill="searchSaved ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 21s-7.5-4.6-9.5-9.2C1 8 3.4 4.5 7 4.5c2 0 3.6 1.1 5 2.8 1.4-1.7 3-2.8 5-2.8 3.6 0 6 3.5 4.5 7.3C19.5 16.4 12 21 12 21z"/></svg>
+                                {{ searchSaved ? 'Search saved' : 'Save this search' }}
+                            </button>
+                        </div>
                         <div class="flex items-center gap-3">
                             <select v-model="f.sort" @change="apply" class="rounded-full border-gray-300 text-sm py-1.5">
-                                <option value="">Sort: Best Match</option>
+                                <option value="">Sort: Newly listed</option>
+                                <option value="best_selling">Best selling</option>
                                 <option value="price_asc">Price + delivery: lowest first</option>
                                 <option value="price_desc">Price + delivery: highest first</option>
                             </select>

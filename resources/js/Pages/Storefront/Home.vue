@@ -196,8 +196,8 @@ const marqueeItems = content.marquee || [];
             <!-- Category bubbles -->
             <section class="mt-10">
                 <h2 class="text-xl md:text-2xl font-bold">Shop by category</h2>
-                <div class="mt-5 grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-4">
-                    <Link v-for="c in bubbles" :key="c.label" :href="c.href" class="group text-center">
+                <div class="mt-5 flex lg:grid lg:grid-cols-7 gap-4 overflow-x-auto snap-x pb-2 -mx-4 px-4 lg:mx-0 lg:px-0">
+                    <Link v-for="c in bubbles" :key="c.label" :href="c.href" class="group text-center snap-start shrink-0 w-24 sm:w-28 lg:w-auto">
                         <div class="aspect-square rounded-full overflow-hidden bg-gray-100 mx-auto max-w-[130px]">
                             <img :src="u(c.img, 300)" :alt="c.label" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
                         </div>

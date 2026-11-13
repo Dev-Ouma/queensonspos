@@ -58,6 +58,14 @@ class ShopController extends Controller
             'price_desc' => $query->orderByDesc(
                 \App\Models\ProductVariant::select('price_cents')->whereColumn('product_id', 'products.id')->orderBy('price_cents')->limit(1)
             ),
+            'best_selling' => $query->orderByDesc(
+                \DB::table('order_items')
+                    ->join('orders', 'orders.id', '=', 'order_items.order_id')
+                    ->join('product_variants', 'product_variants.id', '=', 'order_items.variant_id')
+                    ->where('orders.payment_status', 'paid')
+                    ->whereColumn('product_variants.product_id', 'products.id')
+                    ->selectRaw('COALESCE(SUM(order_items.qty), 0)')
+            ),
             default => $query->latest('published_at'),
         };
 
@@ -67,6 +75,10 @@ class ShopController extends Controller
             'products' => $products->through(fn ($p) => $this->card($p)),
             'categories' => Category::where('published', true)->orderBy('position')->get(['id', 'name', 'slug']),
             'filters' => $request->only(['q', 'category', 'collection', 'color', 'size', 'sort', 'min_price', 'max_price']),
+            'searchSaved' => ($cid = auth('customer')->id())
+                ? \App\Models\SavedSearch::where('customer_id', $cid)
+                    ->where('filters_hash', \App\Models\SavedSearch::hashFor(\App\Models\SavedSearch::normalise($request->query())))->exists()
+                : false,
             'colorOptions' => \App\Models\ProductVariant::distinct()->pluck('color')->filter()->values(),
             'sizeOptions' => \App\Models\ProductVariant::distinct()->pluck('size')->filter()->values(),
         ]);
@@ -97,6 +109,11 @@ class ShopController extends Controller
                 'description' => $product->description,
                 'care_instructions' => $product->care_instructions,
                 'brand' => $product->brand?->name,
+                'sold' => $this->soldFor($product->id),
+                'watchers' => \App\Models\WishlistItem::where('product_id', $product->id)->count(),
+                'watched' => ($cid = auth('customer')->id())
+                    ? \App\Models\WishlistItem::where('product_id', $product->id)->where('customer_id', $cid)->exists()
+                    : false,
                 'categories' => $product->categories->map->only(['name', 'slug']),
                 'images' => $product->images->map->only(['path', 'alt']),
                 'reviews' => $product->reviews->map(fn ($r) => [
@@ -106,9 +123,34 @@ class ShopController extends Controller
             'variants' => $variants,
             'related' => $this->productCards(
                 Product::published()->whereHas('categories', fn ($q) => $q->whereIn('categories.id', $product->categories->pluck('id')))
-                    ->where('id', '!=', $product->id)->with('variants', 'images')->limit(4)->get()
+                    ->where('id', '!=', $product->id)->with('variants', 'images')->limit(12)->get()
             ),
         ]);
+    }
+
+    /** Header search suggestions: matching products and categories. */
+    public function suggest(Request $request)
+    {
+        $term = trim((string) $request->get('q', ''));
+        if (mb_strlen($term) < 2) {
+            return response()->json(['products' => [], 'categories' => []]);
+        }
+        $like = '%'.addcslashes($term, '%_\\').'%';
+
+        $products = Product::published()->where('name', 'ilike', $like)
+            ->with('variants', 'images')->orderBy('name')->limit(6)->get()
+            ->map(fn ($p) => [
+                'id' => $p->id,
+                'name' => $p->name,
+                'slug' => $p->slug,
+                'price_cents' => $p->variants->min('price_cents'),
+                'image' => $p->images->first()?->path,
+            ]);
+
+        $categories = Category::where('published', true)->where('name', 'ilike', $like)
+            ->orderBy('position')->limit(4)->get(['name', 'slug']);
+
+        return response()->json(['products' => $products, 'categories' => $categories]);
     }
 
     public function page(string $slug)

@@ -1,6 +1,7 @@
 <script setup>
 import { Link, usePage, router } from '@inertiajs/vue3';
-import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
+import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue';
+import { kes, img, fallbackImage } from '@/money';
 
 const page = usePage();
 const cartCount = computed(() => page.props.cartCount || 0);
@@ -10,6 +11,63 @@ const q = ref('');
 const mobileOpen = ref(false);
 const catOpen = ref(false);
 const qCat = ref('');
+
+/* Search suggestions */
+const sugg = ref({ products: [], categories: [] });
+const suggOpen = ref(false);
+const suggIndex = ref(-1);
+let suggTimer;
+let suggSeq = 0;
+const RECENT_KEY = 'q_searches';
+const recentSearches = ref([]);
+function loadRecent() {
+    try { recentSearches.value = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]').slice(0, 5); } catch { recentSearches.value = []; }
+}
+function rememberSearch(term) {
+    const t = term.trim();
+    if (!t) return;
+    try {
+        const list = [t, ...JSON.parse(localStorage.getItem(RECENT_KEY) || '[]').filter(x => x.toLowerCase() !== t.toLowerCase())].slice(0, 5);
+        localStorage.setItem(RECENT_KEY, JSON.stringify(list));
+    } catch { /* storage unavailable */ }
+}
+function clearRecent() {
+    try { localStorage.removeItem(RECENT_KEY); } catch { /* ignore */ }
+    recentSearches.value = [];
+}
+const showingRecent = computed(() => !q.value || q.value.trim().length < 2);
+const suggItems = computed(() => showingRecent.value
+    ? recentSearches.value.map(t => ({ kind: 'recent', name: t, slug: t, href: `/shop?q=${encodeURIComponent(t)}` }))
+    : [
+    ...sugg.value.products.map(p => ({ href: `/product/${p.slug}`, ...p, kind: 'product' })),
+    ...sugg.value.categories.map(c => ({ href: `/shop?category=${c.slug}`, ...c, kind: 'category' })),
+]);
+watch(q, (val) => {
+    clearTimeout(suggTimer);
+    suggIndex.value = -1;
+    if (!val || val.trim().length < 2) { sugg.value = { products: [], categories: [] }; return; }
+    suggTimer = setTimeout(async () => {
+        const seq = ++suggSeq;
+        try {
+            const res = await fetch(`/search/suggest?q=${encodeURIComponent(val.trim())}`, { headers: { Accept: 'application/json' } });
+            if (seq === suggSeq && res.ok) { sugg.value = await res.json(); suggOpen.value = true; }
+        } catch { /* offline: no suggestions */ }
+    }, 200);
+});
+function suggKey(e) {
+    const n = suggItems.value.length;
+    if (!suggOpen.value || !n) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); suggIndex.value = (suggIndex.value + 1) % n; }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); suggIndex.value = (suggIndex.value - 1 + n) % n; }
+    else if (e.key === 'Escape') { suggOpen.value = false; }
+    else if (e.key === 'Enter' && suggIndex.value >= 0) { e.preventDefault(); goSugg(suggItems.value[suggIndex.value]); }
+}
+function goSugg(item) {
+    suggOpen.value = false;
+    if (item.kind === 'recent') { q.value = item.name; rememberSearch(item.name); }
+    router.visit(item.href);
+}
+function closeSuggSoon() { setTimeout(() => { suggOpen.value = false; }, 150); }
 const mega = [
     { title: 'Clothing', items: [['Dresses', 'dresses'], ['Tops & Blouses', 'tops-blouses'], ['Trousers', 'trousers'], ['Jeans', 'jeans'], ['Skirts', 'skirts'], ['Jackets & Coats', 'jackets-coats']] },
     { title: 'Shop by occasion', items: [['Office Wear', 'office-wear'], ['Casual Wear', 'casual-wear'], ['Occasion Wear', 'occasion-wear']] },
@@ -82,6 +140,8 @@ const nav = [
 ];
 
 function search() {
+    suggOpen.value = false;
+    rememberSearch(q.value);
     router.get('/shop', Object.fromEntries(Object.entries({ q: q.value, category: qCat.value }).filter(([, v]) => v)));
 }
 </script>
@@ -144,11 +204,38 @@ function search() {
                     </div>
                 </div>
                 <form @submit.prevent="search" class="flex-1 flex items-stretch gap-2">
-                    <div class="flex-1 flex items-center border-2 border-navy-900 rounded-full overflow-hidden">
+                    <div class="relative flex-1 flex items-center border-2 border-navy-900 rounded-full">
                         <svg class="w-5 h-5 ml-4 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" stroke-width="2"/><path stroke-linecap="round" stroke-width="2" d="M20 20l-3.5-3.5"/></svg>
-                        <input v-model="q" type="search" placeholder="Search for anything"
-                               class="flex-1 border-0 focus:ring-0 text-sm py-2.5 min-w-0" />
-                        <select v-model="qCat" class="hidden lg:block border-0 border-l border-gray-300 text-xs text-gray-700 focus:ring-0 py-2.5 pr-8">
+                        <input v-model="q" type="search" placeholder="Search for anything" aria-label="Search for anything"
+                               role="combobox" aria-autocomplete="list" aria-controls="search-suggest" :aria-expanded="suggOpen && suggItems.length > 0"
+                               :aria-activedescendant="suggIndex >= 0 ? `sugg-${suggIndex}` : undefined"
+                               @keydown="suggKey" @focus="loadRecent(); suggOpen = true" @blur="closeSuggSoon"
+                               class="flex-1 border-0 focus:ring-0 text-sm py-2.5 min-w-0 bg-transparent" />
+                        <ul v-if="suggOpen && suggItems.length" id="search-suggest" role="listbox"
+                            class="absolute left-0 right-0 top-full mt-2 bg-white border border-gray-200 rounded-2xl shadow-2xl py-2 z-50 text-sm">
+                            <li v-if="showingRecent" role="presentation" class="flex justify-between px-4 pt-1 pb-2 text-xs text-gray-500">
+                                <span class="font-semibold">Recent searches</span>
+                                <button type="button" @mousedown.prevent="clearRecent" class="underline">Clear</button>
+                            </li>
+                            <li v-for="(it, i) in suggItems" :key="it.kind + it.slug" :id="`sugg-${i}`" role="option" :aria-selected="i === suggIndex"
+                                @mousedown.prevent="goSugg(it)" @mouseenter="suggIndex = i"
+                                :class="['flex items-center gap-3 px-4 py-2 cursor-pointer', i === suggIndex && 'bg-gray-100']">
+                                <template v-if="it.kind === 'product'">
+                                    <img :src="img(it.image) || fallbackImage(it.id, 120)" alt="" class="w-9 h-9 rounded-lg object-cover bg-gray-100" />
+                                    <span class="flex-1 truncate">{{ it.name }}</span>
+                                    <span class="font-semibold">{{ kes(it.price_cents) }}</span>
+                                </template>
+                                <template v-else-if="it.kind === 'recent'">
+                                    <svg class="w-4 h-4 text-gray-400 ml-2.5 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="2"/><path stroke-linecap="round" stroke-width="2" d="M12 7v5l3 2"/></svg>
+                                    <span class="flex-1">{{ it.name }}</span>
+                                </template>
+                                <template v-else>
+                                    <svg class="w-4 h-4 text-gray-400 ml-2.5 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" stroke-width="2"/><path stroke-linecap="round" stroke-width="2" d="M20 20l-3.5-3.5"/></svg>
+                                    <span>in <b>{{ it.name }}</b></span>
+                                </template>
+                            </li>
+                        </ul>
+                        <select v-model="qCat" aria-label="Category" class="hidden lg:block border-0 border-l border-gray-300 text-xs text-gray-700 focus:ring-0 py-2.5 pr-8 bg-transparent rounded-r-full">
                             <option value="">All Categories</option>
                             <option v-for="n in nav.slice(1)" :key="n.slug" :value="n.slug">{{ n.label }}</option>
                         </select>
@@ -198,6 +285,7 @@ function search() {
                         <Link href="/account" class="hover:underline">Summary</Link>
                         <Link href="/account/orders" class="hover:underline">Purchases</Link>
                         <Link href="/account/wishlist" class="hover:underline">Watchlist</Link>
+                        <Link href="/account/saved-searches" class="hover:underline">Saved searches</Link>
                         <Link href="/cart" class="hover:underline">Cart</Link>
                     </div>
                 </div>
@@ -251,7 +339,7 @@ function search() {
 
         <!-- WhatsApp chat float -->
         <a v-if="socials.whatsapp" :href="socials.whatsapp" target="_blank" rel="noopener"
-           class="fixed bottom-6 right-6 z-40 w-12 h-12 rounded-full bg-emerald-600 text-white shadow-xl flex items-center justify-center hover:bg-emerald-700 hover:scale-110 transition"
+           class="wa-float fixed bottom-6 right-6 z-40 w-12 h-12 rounded-full bg-emerald-600 text-white shadow-xl flex items-center justify-center hover:bg-emerald-700 hover:scale-110 transition"
            :class="{ 'bottom-20': scrolled }"
            aria-label="Chat with us on WhatsApp">
             <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 00-8.6 15.1L2 22l5-1.3A10 10 0 1012 2zm4.5 13.1c-.2.6-1.2 1.1-1.7 1.2-.8.1-1.4.1-3-.6a11.2 11.2 0 01-4.3-3.8 4.9 4.9 0 01-1-2.6 2.8 2.8 0 01.9-2.1c.2-.2.5-.3.7-.3h.5c.2 0 .4-.1.6.4l.8 1.8c.1.2.1.3.1.5-.4.9-.9.9-.6 1.3a6.7 6.7 0 003.3 2.9c.2.1.4.1.5-.1.2-.2.6-.8.8-1 .2-.2.4-.2.6-.1.2.1 1.5.7 1.7.8.2.1.4.2.4.3a2 2 0 01-.3 1.4z"/></svg>
