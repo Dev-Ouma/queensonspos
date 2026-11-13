@@ -30,10 +30,7 @@ const rails = computed(() => [
     { title: 'New arrivals', sub: 'Just landed this week', href: '/shop?collection=new-arrivals', items: props.newArrivals },
 ]);
 
-const sideTiles = [
-    { eyebrow: 'Workwear edit', title: 'Office looks from KES 2,500', img: 'photo-1496747611176-843222e1e57c', href: '/shop?category=office-wear' },
-    { eyebrow: 'Finish the look', title: 'Bags & accessories', img: 'photo-1548036328-c9fa89d128fa', href: '/shop?category=handbags' },
-];
+
 
 const trust = [
     { title: 'Pay with M-Pesa', sub: 'Or Visa and Mastercard' },
@@ -45,6 +42,9 @@ const trust = [
 const u = (id, w) => `https://images.unsplash.com/${id}?q=80&w=${w}&auto=format&fit=crop`;
 
 const content = usePage().props.storefront || {};
+
+/* Promo tiles beside the hero (admin-managed) */
+const sideTiles = content.promo_tiles || [];
 
 /* Hero slideshow (admin-managed via CMS → Storefront) */
 const slides = content.hero_slides || [];
@@ -182,7 +182,7 @@ const marqueeItems = content.marquee || [];
             </section>
             <div class="grid grid-cols-2 lg:grid-cols-1 gap-4">
                 <Link v-for="t in sideTiles" :key="t.title" :href="t.href" class="group relative rounded-2xl overflow-hidden h-[150px] md:h-[182px]">
-                    <img :src="u(t.img, 700)" alt="" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition duration-300" />
+                    <img :src="t.img" alt="" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition duration-300" />
                     <div class="absolute inset-0 bg-gradient-to-r from-navy-900/80 to-navy-900/10"></div>
                     <div class="relative h-full flex flex-col justify-end p-5 text-white">
                         <div class="text-[11px] font-semibold uppercase tracking-wider text-gold-light">{{ t.eyebrow }}</div>

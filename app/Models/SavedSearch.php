@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class SavedSearch extends Model
 {
     /** Filter keys a saved search may hold (mirrors the /shop query string). */
-    public const KEYS = ['q', 'category', 'collection', 'color', 'size', 'sort', 'min_price', 'max_price'];
+    public const KEYS = ['q', 'exact', 'category', 'collection', 'color', 'size', 'sort', 'min_price', 'max_price'];
 
     protected $fillable = ['customer_id', 'label', 'filters', 'filters_hash'];
 

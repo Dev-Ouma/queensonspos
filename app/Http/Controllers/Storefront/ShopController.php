@@ -29,8 +29,28 @@ class ShopController extends Controller
     {
         $query = Product::published()->with(['variants', 'images', 'categories']);
 
-        if ($request->filled('q')) {
-            $query->where('name', 'ilike', '%'.$request->q.'%');
+        // Smart search: read a free-text query into filters (AI when configured).
+        // Filters the shopper picked by hand always win; ?exact=1 skips it.
+        $ai = null;
+        if ($request->filled('q') && ! $request->boolean('exact')) {
+            $cats = Category::where('published', true)->pluck('name', 'slug')->all();
+            $ai = \App\Support\AiSearch::interpret(
+                (string) $request->q, $cats,
+                \App\Models\ProductVariant::distinct()->pluck('color')->filter()->values()->all(),
+                \App\Models\ProductVariant::distinct()->pluck('size')->filter()->values()->all(),
+            );
+            foreach (['category', 'color', 'size', 'min_price', 'max_price', 'sort'] as $k) {
+                if (! $request->filled($k) && $ai['filters'][$k] !== null) {
+                    $request->merge([$k => $ai['filters'][$k]]);
+                } else {
+                    $ai['filters'][$k] = null;
+                }
+            }
+        }
+        $words = $ai ? (string) $ai['filters']['keywords'] : (string) $request->q;
+        foreach (array_filter(preg_split('/\s+/', trim($words))) as $w) {
+            $like = '%'.addcslashes($w, '%_\\').'%';
+            $query->where(fn ($q) => $q->where('name', 'ilike', $like)->orWhere('description', 'ilike', $like));
         }
         if ($request->filled('category')) {
             $query->whereHas('categories', fn ($q) => $q->where('slug', $request->category));
@@ -71,10 +91,21 @@ class ShopController extends Controller
 
         $products = $query->paginate(12)->withQueryString();
 
+        if ($request->filled('q') && ! $request->has('page')) {
+            \App\Models\SearchLog::create([
+                'term' => mb_substr((string) $request->q, 0, 200),
+                'filters' => $ai ? array_filter($ai['filters'], fn ($v) => $v !== null) : null,
+                'results' => $products->total(),
+                'ai' => (bool) ($ai['ai'] ?? false),
+                'customer_id' => auth('customer')->id(),
+            ]);
+        }
+
         return Inertia::render('Storefront/Shop', [
             'products' => $products->through(fn ($p) => $this->card($p)),
             'categories' => Category::where('published', true)->orderBy('position')->get(['id', 'name', 'slug']),
-            'filters' => $request->only(['q', 'category', 'collection', 'color', 'size', 'sort', 'min_price', 'max_price']),
+            'smart' => $ai ? ['ai' => $ai['ai'], 'applied' => array_filter($ai['filters'], fn ($v) => $v !== null)] : null,
+            'filters' => $request->only(['q', 'exact', 'category', 'collection', 'color', 'size', 'sort', 'min_price', 'max_price']),
             'searchSaved' => ($cid = auth('customer')->id())
                 ? \App\Models\SavedSearch::where('customer_id', $cid)
                     ->where('filters_hash', \App\Models\SavedSearch::hashFor(\App\Models\SavedSearch::normalise($request->query())))->exists()

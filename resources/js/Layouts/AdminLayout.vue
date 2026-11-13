@@ -28,6 +28,7 @@ const sections = computed(() => [
     { label: 'Expenses', href: '/admin/expenses', icon: 'M12 8c-1.7 0-3 .9-3 2s1.3 2 3 2 3 .9 3 2-1.3 2-3 2m0-8c1.1 0 2.1.4 2.6 1M12 8V7m0 10v-1m9-4a9 9 0 11-18 0 9 9 0 0118 0z', show: can('finance.view') },
     { label: 'Reports', href: '/admin/reports', icon: 'M9 19v-6M13 19V5M17 19v-9M5 19h16', show: can('reports.view') },
     { label: 'Coupons', href: '/admin/coupons', icon: 'M15 5v2m0 4v2m0 4v2M5 5h14a2 2 0 012 2v3a2 2 0 000 4v3a2 2 0 01-2 2H5a2 2 0 01-2-2v-3a2 2 0 000-4V7a2 2 0 012-2z', show: can('marketing.view') },
+    { label: 'Search Insights', href: '/admin/search', icon: 'M21 21l-4.3-4.3M10.5 18a7.5 7.5 0 100-15 7.5 7.5 0 000 15z', show: can('marketing.view') },
     { label: 'Reviews', href: '/admin/reviews', icon: 'M11.05 3.5a1 1 0 011.9 0l1.52 4.68a1 1 0 00.95.69h4.92a1 1 0 01.59 1.81l-3.98 2.89a1 1 0 00-.36 1.12l1.52 4.68a1 1 0 01-1.54 1.12l-3.98-2.9a1 1 0 00-1.18 0l-3.98 2.9a1 1 0 01-1.54-1.12l1.52-4.68a1 1 0 00-.36-1.12L2.07 10.7a1 1 0 01.59-1.8h4.92a1 1 0 00.95-.7l1.52-4.68z', show: can('products.view') },
     { label: 'Website CMS', href: '/admin/cms', icon: 'M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13h4v8h-4z', show: can('cms.view') },
     { label: 'Staff', href: '/admin/users', icon: 'M12 4.35a4 4 0 110 7.3M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.2', show: can('users.view') },

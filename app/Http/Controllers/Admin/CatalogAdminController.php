@@ -90,6 +90,7 @@ class CatalogAdminController extends Controller
             'pages' => CmsPage::orderBy('title')->get(),
             'banners' => Banner::orderBy('position')->get(),
             'storefrontContent' => \App\Support\StorefrontContent::all(),
+            'aiConfigured' => (bool) config('services.anthropic.key'),
         ]);
     }
 
@@ -127,6 +128,12 @@ class CatalogAdminController extends Controller
             'socials.whatsapp' => 'nullable|url|max:250',
             'social_proof_enabled' => 'required|boolean',
             'free_delivery_threshold_cents' => 'required|integer|min:0',
+            'promo_tiles' => 'required|array|size:2',
+            'promo_tiles.*.eyebrow' => 'required|string|max:40',
+            'promo_tiles.*.title' => 'required|string|max:60',
+            'promo_tiles.*.img' => 'required|url|max:500',
+            'promo_tiles.*.href' => 'required|string|max:200',
+            'ai_search_enabled' => 'required|boolean',
         ]);
         $data['stats'] = array_map(fn ($s) => $s + ['suffix' => ''], $data['stats']);
 

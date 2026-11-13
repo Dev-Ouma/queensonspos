@@ -150,6 +150,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified'])->group(
 
     Route::middleware('permission:marketing.view')->group(function () {
         Route::get('/coupons', [CatalogAdminController::class, 'coupons'])->name('coupons');
+        Route::get('/search', [\App\Http\Controllers\Admin\SearchInsightsController::class, 'index'])->name('search');
         Route::post('/coupons', [CatalogAdminController::class, 'couponStore'])->middleware('permission:marketing.create')->name('coupons.store');
         Route::patch('/coupons/{coupon}/toggle', [CatalogAdminController::class, 'couponToggle'])->middleware('permission:marketing.edit')->name('coupons.toggle');
     });

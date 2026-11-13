@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'anthropic' => [
+        'key' => env('ANTHROPIC_API_KEY'),
+        'search_model' => env('ANTHROPIC_SEARCH_MODEL', 'claude-opus-5-5'),
+    ],
+
 ];

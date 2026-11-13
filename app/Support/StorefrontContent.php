@@ -14,7 +14,7 @@ class StorefrontContent
     public const KEYS = [
         'hero_slides', 'announcements', 'marquee', 'flash_sale',
         'testimonials', 'stats', 'socials', 'social_proof_enabled',
-        'free_delivery_threshold_cents',
+        'free_delivery_threshold_cents', 'promo_tiles', 'ai_search_enabled',
     ];
 
     public static function defaults(): array
@@ -62,6 +62,11 @@ class StorefrontContent
             ],
             'social_proof_enabled' => true,
             'free_delivery_threshold_cents' => 500000,
+            'promo_tiles' => [
+                ['eyebrow' => 'Workwear edit', 'title' => 'Office looks from KES 2,500', 'img' => 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?q=80&w=800&auto=format&fit=crop', 'href' => '/shop?category=office-wear'],
+                ['eyebrow' => 'Finish the look', 'title' => 'Bags & accessories', 'img' => 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?q=80&w=800&auto=format&fit=crop', 'href' => '/shop?category=handbags'],
+            ],
+            'ai_search_enabled' => true,
         ];
     }
 

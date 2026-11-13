@@ -5,7 +5,7 @@ import Pagination from '@/Components/Pagination.vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { reactive, ref, computed } from 'vue';
 
-const props = defineProps({ products: Object, categories: Array, filters: Object, colorOptions: Array, sizeOptions: Array, searchSaved: Boolean });
+const props = defineProps({ products: Object, categories: Array, filters: Object, colorOptions: Array, sizeOptions: Array, searchSaved: Boolean, smart: Object });
 const page = usePage();
 
 const f = reactive({ sort: '', ...Object.fromEntries(Object.entries(props.filters).filter(([, v]) => v != null)) });
@@ -23,7 +23,25 @@ const chips = computed(() => ['category', 'color', 'size', 'min_price', 'max_pri
     k, label: k === 'category' ? activeCategory.value?.name || f[k] : k === 'min_price' ? `From KES ${f[k]}` : k === 'max_price' ? `To KES ${f[k]}` : f[k],
 })));
 
+const smartLabels = computed(() => {
+    const a = props.smart?.applied || {};
+    const cat = props.categories.find(c => c.slug === a.category)?.name;
+    const sorts = { price_asc: 'Lowest price first', price_desc: 'Highest price first', best_selling: 'Best selling' };
+    return [
+        cat, a.color, a.size && `Size ${a.size}`,
+        a.min_price && `From KES ${Number(a.min_price).toLocaleString()}`,
+        a.max_price && `Up to KES ${Number(a.max_price).toLocaleString()}`,
+        a.keywords && `“${a.keywords}”`, sorts[a.sort],
+    ].filter(Boolean);
+});
+
 function apply() {
+    // Once the smart search has turned the words into filters, keep the
+    // leftover keywords only so the next request is not re-read.
+    if (props.smart && !f.exact) {
+        f.q = props.smart.applied.keywords || '';
+        if (f.q) f.exact = 1;
+    }
     router.get('/shop', Object.fromEntries(Object.entries(f).filter(([, v]) => v)), { preserveState: true, preserveScroll: true });
 }
 function saveSearch() {
@@ -133,6 +151,13 @@ function reset() { Object.keys(f).forEach(k => { if (k !== 'q') f[k] = ''; }); a
                                 <button @click="view = 'grid'" :class="['px-3 py-1.5 text-xs', view === 'grid' ? 'bg-navy-900 text-white' : '']">Grid</button>
                             </div>
                         </div>
+                    </div>
+
+                    <div v-if="smart && smartLabels.length" class="mt-3 rounded-xl bg-emerald-50 border border-emerald-100 px-4 py-2.5 text-sm flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l1.9 5.6L19.5 9.5l-5.6 1.9L12 17l-1.9-5.6L4.5 9.5l5.6-1.9L12 2zm7 11l.9 2.6 2.6.9-2.6.9L19 21l-.9-2.6-2.6-.9 2.6-.9L19 13z"/></svg>
+                        <span class="font-semibold">{{ smart.ai ? 'AI search' : 'Smart search' }} understood:</span>
+                        <span>{{ smartLabels.join(' · ') }}</span>
+                        <Link :href="`/shop?q=${encodeURIComponent(filters.q)}&exact=1`" class="ml-auto text-xs underline whitespace-nowrap">Search exact words instead</Link>
                     </div>
 
                     <div v-if="chips.length" class="flex flex-wrap gap-2 mt-3">

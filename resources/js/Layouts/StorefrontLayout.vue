@@ -206,7 +206,7 @@ function search() {
                 <form @submit.prevent="search" class="flex-1 flex items-stretch gap-2">
                     <div class="relative flex-1 flex items-center border-2 border-navy-900 rounded-full">
                         <svg class="w-5 h-5 ml-4 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" stroke-width="2"/><path stroke-linecap="round" stroke-width="2" d="M20 20l-3.5-3.5"/></svg>
-                        <input v-model="q" type="search" placeholder="Search for anything" aria-label="Search for anything"
+                        <input v-model="q" type="search" placeholder="Search anything, e.g. red dress under 3k" aria-label="Search for anything"
                                role="combobox" aria-autocomplete="list" aria-controls="search-suggest" :aria-expanded="suggOpen && suggItems.length > 0"
                                :aria-activedescendant="suggIndex >= 0 ? `sugg-${suggIndex}` : undefined"
                                @keydown="suggKey" @focus="loadRecent(); suggOpen = true" @blur="closeSuggSoon"

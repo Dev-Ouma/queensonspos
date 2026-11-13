@@ -3,7 +3,7 @@ import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
-const props = defineProps({ pages: Array, banners: Array, storefrontContent: Object });
+const props = defineProps({ pages: Array, banners: Array, storefrontContent: Object, aiConfigured: Boolean });
 
 /* Storefront content editor (hero, announcements, marquee, flash sale, testimonials, stats, socials) */
 const sf = useForm(JSON.parse(JSON.stringify(props.storefrontContent)));
@@ -140,6 +140,30 @@ function openBanner(b = null) {
                     </div>
                 </div>
             </section>
+
+            <!-- Promo tiles + AI search -->
+            <div class="grid md:grid-cols-2 gap-6">
+                <section>
+                    <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">Homepage Promo Tiles (beside hero)</h3>
+                    <div v-for="(t, i) in sf.promo_tiles" :key="i" class="grid grid-cols-2 gap-2 mb-3 text-sm">
+                        <input v-model="t.eyebrow" required placeholder="Eyebrow" class="rounded border-gray-200 text-xs" />
+                        <input v-model="t.title" required placeholder="Title" class="rounded border-gray-200 text-xs" />
+                        <input v-model="t.img" required type="url" placeholder="Image URL" class="rounded border-gray-200 text-xs" />
+                        <input v-model="t.href" required placeholder="/shop?category=…" class="rounded border-gray-200 text-xs" />
+                    </div>
+                </section>
+                <section>
+                    <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">AI Search</h3>
+                    <label class="flex items-center gap-2 text-xs text-gray-600">
+                        <input type="checkbox" v-model="sf.ai_search_enabled" class="rounded text-emerald-600" />
+                        Use Claude AI to understand shopper searches ("red dress under 3k")
+                    </label>
+                    <p class="text-xs mt-2" :class="aiConfigured ? 'text-green-700' : 'text-amber-700'">
+                        {{ aiConfigured ? 'API key found. AI search is live when ticked.' : 'No ANTHROPIC_API_KEY in .env. The built-in smart parser is used until a key is added.' }}
+                    </p>
+                    <a href="/admin/search" class="inline-block text-xs text-emerald-600 font-semibold mt-2">View search insights →</a>
+                </section>
+            </div>
 
             <!-- Testimonials -->
             <section>
