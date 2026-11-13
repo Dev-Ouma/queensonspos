@@ -5,6 +5,7 @@ namespace App\Support;
 use Anthropic\Client;
 use App\Support\AiSearch\SearchIntent;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\RateLimiter;
 
 /**
  * Turns a free-text shopper search ("red dress under 3k for a wedding")
@@ -14,7 +15,47 @@ use Illuminate\Support\Facades\Log;
  */
 class AiSearch
 {
+    /** Everyday words shoppers type, mapped to category slugs (used only if that slug exists). */
+    private const CATEGORY_WORDS = [
+        'dresses' => ['gown', 'gowns', 'frock', 'frocks', 'maxi', 'midi'],
+        'tops-blouses' => ['top', 'tops', 'blouse', 'blouses', 'shirt', 'shirts', 'tee', 'tees', 'tshirt', 'crop'],
+        'trousers' => ['trouser', 'pants', 'palazzo', 'palazzos', 'slacks'],
+        'jeans' => ['denim', 'denims'],
+        'skirts' => ['skirt'],
+        'jackets-coats' => ['jacket', 'coat', 'coats', 'blazer', 'blazers', 'trench'],
+        'shoes' => ['shoe', 'heels', 'heel', 'sandals', 'sandal', 'sneakers', 'sneaker', 'boots', 'boot', 'flats', 'pumps', 'loafers'],
+        'handbags' => ['bag', 'bags', 'handbag', 'purse', 'purses', 'clutch', 'clutches', 'tote', 'totes'],
+        'accessories' => ['jewellery', 'jewelry', 'earrings', 'necklace', 'necklaces', 'bracelet', 'scarf', 'scarves', 'belt', 'belts', 'sunglasses'],
+        'office-wear' => ['office', 'workwear', 'work'],
+        'occasion-wear' => ['wedding', 'party', 'occasion', 'dinner', 'gala'],
+        'pull-necks' => ['turtleneck', 'turtlenecks', 'polo neck'],
+    ];
+
+    /** Shade words mapped to the base colour, used only if that colour is stocked. */
+    private const COLOUR_WORDS = [
+        'Blue' => ['navy', 'denim blue', 'sky', 'royal'], 'Red' => ['maroon', 'burgundy', 'wine', 'scarlet'],
+        'Pink' => ['blush', 'fuchsia', 'rose'], 'Green' => ['olive', 'emerald', 'sage', 'mint'],
+        'Brown' => ['tan', 'camel', 'chocolate', 'nude'], 'White' => ['ivory', 'cream', 'off white'],
+        'Black' => ['jet'], 'Yellow' => ['mustard', 'lemon'], 'Purple' => ['lilac', 'lavender', 'violet', 'plum'],
+        'Grey' => ['gray', 'charcoal', 'silver'], 'Beige' => ['khaki', 'sand', 'stone'],
+    ];
+
     public const FIELDS = ['keywords', 'category', 'color', 'size', 'min_price', 'max_price', 'sort'];
+
+    /**
+     * Published categories (slug => name), stocked colours and sizes.
+     * Cached for 10 minutes: the header asks on every keystroke.
+     *
+     * @return array{0: array, 1: array, 2: array}
+     */
+    public static function vocabulary(): array
+    {
+        return cache()->remember('ai_search.vocabulary', 600, fn () => [
+            \App\Models\Category::where('published', true)->pluck('name', 'slug')->all(),
+            \App\Models\ProductVariant::distinct()->pluck('color')->filter()->values()->all(),
+            \App\Models\ProductVariant::distinct()->pluck('size')->filter()->values()->all(),
+        ]);
+    }
 
     /** @return array{filters: array, ai: bool} */
     public static function interpret(string $term, array $categories, array $colors, array $sizes): array
@@ -24,11 +65,23 @@ class AiSearch
 
         if ($useAi) {
             $key = 'ai_search.'.sha1(mb_strtolower($term).'|'.implode(',', array_keys($categories)).'|'.implode(',', $colors).'|'.implode(',', $sizes));
-            $filters = cache()->remember($key, now()->addDay(), fn () => self::claude($term, $categories, $colors, $sizes));
+            // Cached answers are free. New terms call Claude, capped per visitor
+            // so a bot typing random searches cannot run up the API bill.
+            $filters = cache()->get($key);
+            if ($filters === null) {
+                $limiter = 'ai-search:'.(request()?->ip() ?? 'cli');
+                if (RateLimiter::tooManyAttempts($limiter, 20)) {
+                    return ['filters' => self::rules($term, $categories, $colors, $sizes), 'ai' => false];
+                }
+                RateLimiter::hit($limiter, 60);
+                $filters = self::claude($term, $categories, $colors, $sizes);
+                if ($filters !== null) {
+                    cache()->put($key, $filters, now()->addDay());
+                }
+            }
             if ($filters !== null) {
                 return ['filters' => $filters, 'ai' => true];
             }
-            cache()->forget($key);
         }
 
         return ['filters' => self::rules($term, $categories, $colors, $sizes), 'ai' => false];
@@ -95,6 +148,21 @@ class AiSearch
                 break;
             }
         }
+        if (! $out['color']) {
+            foreach (self::COLOUR_WORDS as $base => $shades) {
+                $stocked = collect($colors)->first(fn ($c) => strcasecmp($c, $base) === 0);
+                if (! $stocked) {
+                    continue;
+                }
+                foreach ($shades as $shade) {
+                    if (preg_match('/\b'.preg_quote($shade, '/').'\b/', $text)) {
+                        $out['color'] = $stocked;
+                        $text = preg_replace('/\b'.preg_quote($shade, '/').'\b/', ' ', $text);
+                        break 2;
+                    }
+                }
+            }
+        }
         foreach ($sizes as $s) {
             if (preg_match('/\bsize\s+'.preg_quote(mb_strtolower($s), '/').'\b/', $text, $m)) {
                 $out['size'] = $s;
@@ -110,6 +178,21 @@ class AiSearch
                 $out['category'] = $slug;
                 $text = str_replace($m[0], ' ', $text);
                 break;
+            }
+        }
+
+        if (! $out['category']) {
+            foreach (self::CATEGORY_WORDS as $slug => $words) {
+                if (! isset($categories[$slug])) {
+                    continue;
+                }
+                foreach ($words as $w) {
+                    if (preg_match('/\b'.preg_quote($w, '/').'\b/', $text)) {
+                        $out['category'] = $slug;
+                        $text = preg_replace('/\b'.preg_quote($w, '/').'\b/', ' ', $text);
+                        break 2;
+                    }
+                }
             }
         }
 

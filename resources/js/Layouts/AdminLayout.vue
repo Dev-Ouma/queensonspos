@@ -7,7 +7,8 @@ const user = computed(() => page.props.auth?.user);
 const perms = computed(() => new Set(user.value?.permissions || []));
 const flash = computed(() => page.props.flash?.success);
 const errors = computed(() => Object.values(page.props.errors || {}));
-const collapsed = ref(false);
+// Start collapsed on phones and small tablets so content gets the width.
+const collapsed = ref(typeof window !== 'undefined' && window.innerWidth < 1024);
 
 const can = (p) => perms.value.has(p);
 
@@ -77,8 +78,8 @@ const current = computed(() => page.url);
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                 </button>
                 <div class="flex items-center gap-4">
-                    <span class="text-sm text-gray-600">{{ user?.name }} <span class="text-gray-400">· {{ user?.role }}</span></span>
-                    <Link href="/logout" method="post" as="button" class="text-sm text-gray-500 hover:text-red-600">Sign out</Link>
+                    <Link href="/profile" class="text-sm text-gray-600 hover:underline" title="My profile">{{ user?.name }} <span class="hidden sm:inline text-gray-400">· {{ user?.role }}</span></Link>
+                    <Link href="/logout" method="post" as="button" class="text-sm text-gray-500 hover:text-red-600 whitespace-nowrap">Sign out</Link>
                 </div>
             </header>
 

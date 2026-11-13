@@ -12,3 +12,7 @@ use Illuminate\Support\Facades\Schedule;
 Schedule::call(fn () => app(\App\Services\InventoryService::class)->releaseExpired())
     ->everyFiveMinutes()
     ->name('release-expired-reservations');
+
+Schedule::command('model:prune', ['--model' => [\App\Models\SearchLog::class]])
+    ->daily()
+    ->name('prune-search-logs');

@@ -151,6 +151,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified'])->group(
     Route::middleware('permission:marketing.view')->group(function () {
         Route::get('/coupons', [CatalogAdminController::class, 'coupons'])->name('coupons');
         Route::get('/search', [\App\Http\Controllers\Admin\SearchInsightsController::class, 'index'])->name('search');
+        Route::get('/search/export', [\App\Http\Controllers\Admin\SearchInsightsController::class, 'export'])->name('search.export');
         Route::post('/coupons', [CatalogAdminController::class, 'couponStore'])->middleware('permission:marketing.create')->name('coupons.store');
         Route::patch('/coupons/{coupon}/toggle', [CatalogAdminController::class, 'couponToggle'])->middleware('permission:marketing.edit')->name('coupons.toggle');
     });
@@ -204,7 +205,6 @@ Route::get('/dashboard', fn () => redirect()->route('admin.dashboard'))->middlew
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
 require __DIR__.'/auth.php';

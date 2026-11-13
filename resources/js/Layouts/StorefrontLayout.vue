@@ -39,6 +39,7 @@ const showingRecent = computed(() => !q.value || q.value.trim().length < 2);
 const suggItems = computed(() => showingRecent.value
     ? recentSearches.value.map(t => ({ kind: 'recent', name: t, slug: t, href: `/shop?q=${encodeURIComponent(t)}` }))
     : [
+    ...(sugg.value.smart ? [{ kind: 'smart', slug: 'smart', ...sugg.value.smart, href: `/shop?q=${encodeURIComponent(q.value.trim())}` }] : []),
     ...sugg.value.products.map(p => ({ href: `/product/${p.slug}`, ...p, kind: 'product' })),
     ...sugg.value.categories.map(c => ({ href: `/shop?category=${c.slug}`, ...c, kind: 'category' })),
 ]);
@@ -224,6 +225,11 @@ function search() {
                                     <img :src="img(it.image) || fallbackImage(it.id, 120)" alt="" class="w-9 h-9 rounded-lg object-cover bg-gray-100" />
                                     <span class="flex-1 truncate">{{ it.name }}</span>
                                     <span class="font-semibold">{{ kes(it.price_cents) }}</span>
+                                </template>
+                                <template v-else-if="it.kind === 'smart'">
+                                    <svg class="w-4 h-4 text-emerald-600 ml-2.5 mr-2.5 shrink-0" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l1.9 5.6L19.5 9.5l-5.6 1.9L12 17l-1.9-5.6L4.5 9.5l5.6-1.9L12 2z"/></svg>
+                                    <span class="flex-1 truncate"><b>{{ it.label }}</b><span v-if="it.keywords" class="text-gray-500"> · “{{ it.keywords }}”</span></span>
+                                    <span class="text-xs text-emerald-700 font-semibold whitespace-nowrap">Smart search</span>
                                 </template>
                                 <template v-else-if="it.kind === 'recent'">
                                     <svg class="w-4 h-4 text-gray-400 ml-2.5 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="2"/><path stroke-linecap="round" stroke-width="2" d="M12 7v5l3 2"/></svg>

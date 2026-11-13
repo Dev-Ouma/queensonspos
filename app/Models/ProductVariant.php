@@ -13,4 +13,11 @@ class ProductVariant extends Model
     public function product() { return $this->belongsTo(Product::class); }
     public function balances() { return $this->hasMany(InventoryBalance::class, 'variant_id'); }
     public function availableQty(): int { return $this->balances->sum(fn ($b) => $b->on_hand - $b->reserved - $b->damaged); }
+
+    /** Smart search caches the category, colour and size lists; refresh them on change. */
+    protected static function booted(): void
+    {
+        static::saved(fn () => cache()->forget('ai_search.vocabulary'));
+        static::deleted(fn () => cache()->forget('ai_search.vocabulary'));
+    }
 }

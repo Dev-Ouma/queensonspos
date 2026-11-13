@@ -72,6 +72,9 @@ class DashboardController extends Controller
             'salesChart' => $last14,
             'topProducts' => $topProducts,
             'lowStock' => $lowStock,
+            'searches' => \App\Models\SearchLog::where('created_at', '>=', now()->subDays(7))
+                ->selectRaw('LOWER(term) as term, COUNT(*) as n, MIN(results) as min_results')
+                ->groupByRaw('LOWER(term)')->orderByDesc('n')->limit(6)->get(),
         ]);
     }
 }

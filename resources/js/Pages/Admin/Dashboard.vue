@@ -5,7 +5,7 @@ import { Head } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { kes } from '@/money';
 
-const props = defineProps({ stats: Object, salesChart: Array, topProducts: Array, lowStock: Array });
+const props = defineProps({ stats: Object, salesChart: Array, topProducts: Array, lowStock: Array, searches: Array });
 
 const maxVal = computed(() => Math.max(1, ...props.salesChart.map(d => d.online + d.pos)));
 </script>
@@ -61,8 +61,9 @@ const maxVal = computed(() => Math.max(1, ...props.salesChart.map(d => d.online 
             </div>
         </div>
 
+        <div class="grid lg:grid-cols-3 gap-6 mt-6">
         <!-- Top products -->
-        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mt-6">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 lg:col-span-2">
             <h2 class="font-semibold text-sm mb-4">Top Selling Products</h2>
             <table class="w-full text-sm">
                 <thead><tr class="text-left text-xs text-gray-400 uppercase"><th class="py-2">Product</th><th>Units</th><th class="text-right">Revenue</th></tr></thead>
@@ -75,6 +76,22 @@ const maxVal = computed(() => Math.max(1, ...props.salesChart.map(d => d.online 
                     <tr v-if="!topProducts.length"><td colspan="3" class="py-4 text-center text-gray-400">No sales yet.</td></tr>
                 </tbody>
             </table>
+        </div>
+
+        <!-- What shoppers searched for -->
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="font-semibold text-sm">Shoppers searched for</h2>
+                <a href="/admin/search" class="text-xs text-emerald-600 font-semibold hover:underline whitespace-nowrap">All insights</a>
+            </div>
+            <ul v-if="searches?.length" class="text-sm space-y-2">
+                <li v-for="s in searches" :key="s.term" class="flex justify-between gap-3">
+                    <span class="truncate">{{ s.term }}<span v-if="+s.min_results === 0" class="ml-1.5 text-[11px] font-semibold text-red-600">no results</span></span>
+                    <span class="text-gray-400 shrink-0">{{ s.n }}×</span>
+                </li>
+            </ul>
+            <p v-else class="text-sm text-gray-400">No website searches this week.</p>
+        </div>
         </div>
     </AdminLayout>
 </template>

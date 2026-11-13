@@ -172,6 +172,7 @@ function reset() { Object.keys(f).forEach(k => { if (k !== 'q') f[k] = ''; }); a
                     <div v-else class="text-center py-20">
                         <div class="font-bold text-lg">No exact matches found</div>
                         <p class="text-sm text-gray-500 mt-1">Try fewer filters or a different search.</p>
+                        <Link v-if="smart" :href="`/shop?q=${encodeURIComponent(filters.q)}&exact=1`" class="block mt-3 text-sm underline">Search for the exact words “{{ filters.q }}”</Link>
                         <button @click="reset" class="mt-4 rounded-full border border-navy-900 px-5 py-2 text-sm font-semibold">Clear filters</button>
                     </div>
                     <div class="mt-8"><Pagination :links="products.links" /></div>

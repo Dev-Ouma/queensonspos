@@ -44,4 +44,23 @@ class SearchInsightsController extends Controller
             'recent' => $base()->latest('created_at')->limit(20)->get(['term', 'filters', 'results', 'ai', 'created_at']),
         ]);
     }
+
+    /** Download every search in the chosen period as CSV. */
+    public function export(Request $request)
+    {
+        $days = in_array((int) $request->days, [7, 30, 90], true) ? (int) $request->days : 30;
+        $rows = SearchLog::where('created_at', '>=', now()->subDays($days))->latest('created_at')->cursor();
+
+        return response()->streamDownload(function () use ($rows) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Date', 'Search', 'Results', 'Read by', 'Filters']);
+            foreach ($rows as $r) {
+                fputcsv($out, [
+                    $r->created_at->format('Y-m-d H:i'), $r->term, $r->results, $r->ai ? 'AI' : 'Rules',
+                    collect($r->filters ?? [])->map(fn ($v, $k) => "$k=$v")->implode('; '),
+                ]);
+            }
+            fclose($out);
+        }, "searches-last-{$days}-days.csv", ['Content-Type' => 'text/csv']);
+    }
 }

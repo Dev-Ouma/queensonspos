@@ -33,12 +33,8 @@ class ShopController extends Controller
         // Filters the shopper picked by hand always win; ?exact=1 skips it.
         $ai = null;
         if ($request->filled('q') && ! $request->boolean('exact')) {
-            $cats = Category::where('published', true)->pluck('name', 'slug')->all();
-            $ai = \App\Support\AiSearch::interpret(
-                (string) $request->q, $cats,
-                \App\Models\ProductVariant::distinct()->pluck('color')->filter()->values()->all(),
-                \App\Models\ProductVariant::distinct()->pluck('size')->filter()->values()->all(),
-            );
+            [$cats, $colors, $sizes] = \App\Support\AiSearch::vocabulary();
+            $ai = \App\Support\AiSearch::interpret((string) $request->q, $cats, $colors, $sizes);
             foreach (['category', 'color', 'size', 'min_price', 'max_price', 'sort'] as $k) {
                 if (! $request->filled($k) && $ai['filters'][$k] !== null) {
                     $request->merge([$k => $ai['filters'][$k]]);
@@ -91,7 +87,12 @@ class ShopController extends Controller
 
         $products = $query->paginate(12)->withQueryString();
 
-        if ($request->filled('q') && ! $request->has('page')) {
+        // Log each new search once: skip paging, filter clicks on the same
+        // results (?exact=1) and repeats of the same words within 10 minutes.
+        $logKey = 'searched.'.sha1(mb_strtolower(trim((string) $request->q)));
+        if ($request->filled('q') && ! $request->has('page') && ! $request->boolean('exact')
+            && now()->timestamp - (int) $request->session()->get($logKey, 0) > 600) {
+            $request->session()->put($logKey, now()->timestamp);
             \App\Models\SearchLog::create([
                 'term' => mb_substr((string) $request->q, 0, 200),
                 'filters' => $ai ? array_filter($ai['filters'], fn ($v) => $v !== null) : null,
@@ -181,7 +182,18 @@ class ShopController extends Controller
         $categories = Category::where('published', true)->where('name', 'ilike', $like)
             ->orderBy('position')->limit(4)->get(['name', 'slug']);
 
-        return response()->json(['products' => $products, 'categories' => $categories]);
+        // Free preview of how the smart search will read the words (rules only, no AI call).
+        [$cats, $colors, $sizes] = \App\Support\AiSearch::vocabulary();
+        $f = \App\Support\AiSearch::rules($term, $cats, $colors, $sizes);
+        $parts = array_values(array_filter([
+            $f['category'] ? $cats[$f['category']] : null,
+            $f['color'], $f['size'] ? 'Size '.$f['size'] : null,
+            $f['min_price'] ? 'from KES '.number_format($f['min_price']) : null,
+            $f['max_price'] ? 'up to KES '.number_format($f['max_price']) : null,
+        ]));
+        $smart = $parts ? ['label' => implode(' · ', $parts), 'keywords' => $f['keywords']] : null;
+
+        return response()->json(['products' => $products, 'categories' => $categories, 'smart' => $smart]);
     }
 
     public function page(string $slug)

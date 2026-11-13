@@ -33,6 +33,7 @@ One backend serves all three surfaces through Inertia.js, so there is no separat
 
 ### Storefront
 - Home page with admin-editable hero, flash sale, testimonials, stats and announcements
+- Smart search: plain words like "red dress under 3k" become filters, read by Claude when an API key is set or by a built-in parser otherwise
 - Shop with categories, collections and brands; product pages with variants, size guide, reviews and recently viewed items
 - Cart with free-delivery progress, coupons and checkout
 - Customer accounts: orders, order tracking, wishlist and saved addresses
@@ -115,6 +116,20 @@ Then open:
 | POS terminal  | `/pos`        |
 
 Seeded staff accounts use demo credentials from `database/seeders`. Change them before any real deployment.
+
+### AI search (optional)
+
+Add these to `.env` to let Claude read shopper searches:
+
+```dotenv
+ANTHROPIC_API_KEY=your-key
+# Optional: defaults to claude-opus-5-5
+ANTHROPIC_SEARCH_MODEL=claude-opus-5-5
+```
+
+Without a key, a built-in parser handles categories, colours, sizes and prices. Switch AI search on or off in Admin → Website CMS, and see what shoppers search for in Admin → Search Insights. Each answer is cached for a day, and each visitor can trigger at most 20 new AI lookups a minute.
+
+Search history older than six months is pruned daily by the scheduler, so run `php artisan schedule:run` every minute from cron.
 
 ## Testing
 
