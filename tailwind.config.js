@@ -13,8 +13,8 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Quicksand', ...defaultTheme.fontFamily.sans],
-                display: ['Playfair Display', 'serif'],
+                sans: ['Plus Jakarta Sans', ...defaultTheme.fontFamily.sans],
+                display: ['Bricolage Grotesque', ...defaultTheme.fontFamily.sans],
             },
             keyframes: {
                 'fade-up': {
@@ -46,25 +46,34 @@ export default {
                 kenburns: 'kenburns 18s ease-out both',
             },
             colors: {
+                // "navy" = brand ink (deep violet-black)
                 navy: {
-                    DEFAULT: '#092B60',
-                    50: '#E8EDF6',
-                    100: '#C6D3E8',
-                    600: '#0B3474',
-                    700: '#092B60',
-                    800: '#07224C',
-                    900: '#051938',
+                    DEFAULT: '#1A1530',
+                    50: '#F4F1FA',
+                    100: '#E4DDF2',
+                    600: '#2A2342',
+                    700: '#1A1530',
+                    800: '#120E24',
+                    900: '#0B0817',
                 },
+                // "emerald" = primary action (electric violet)
                 emerald: {
-                    DEFAULT: '#079447',
-                    600: '#079447',
-                    700: '#067A3B',
+                    50: '#F0EDFF',
+                    100: '#E0D9FF',
+                    200: '#C6BAFF',
+                    500: '#7C5CFF',
+                    600: '#6C4BFF',
+                    700: '#5534E6',
+                    800: '#4224C2',
+                    DEFAULT: '#6C4BFF',
                 },
+                // "gold" = accent (hot pink)
                 gold: {
-                    DEFAULT: '#C5A66A',
-                    light: '#D9C296',
-                    dark: '#A8884C',
+                    DEFAULT: '#FF5FA2',
+                    light: '#FFB8D6',
+                    dark: '#D6246E',
                 },
+                butter: '#FFE8A3',
             },
         },
     },

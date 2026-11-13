@@ -88,7 +88,7 @@ const cashForm = useForm({ type: 'cash_in', amount: null, reason: '' });
         <header class="bg-navy-800 text-white h-14 flex items-center justify-between px-4">
             <div class="flex items-center gap-3">
                 <img src="/logo.svg" alt="" class="w-7 h-7" />
-                <span class="font-display tracking-widest text-gold">QUEENSONS</span>
+                <span class="font-display tracking-tight font-extrabold text-gold">queensons<span class="text-gold">.</span></span>
                 <span class="text-xs bg-navy-600 rounded px-2 py-0.5">POS</span>
             </div>
             <div v-if="session" class="text-xs text-navy-100">

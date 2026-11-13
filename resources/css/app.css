@@ -30,7 +30,7 @@
     bottom: -2px;
     height: 1px;
     width: 100%;
-    background: #C5A66A;
+    background: #FF5FA2;
     transform: scaleX(0);
     transform-origin: right;
     transition: transform .35s ease;
@@ -55,6 +55,11 @@
 /* Hero crossfade slide */
 .hero-slide {
     transition: opacity 1.6s ease;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+}
+@media (prefers-reduced-motion: reduce) {
+    .hero-slide { animation: none !important; }
 }
 
 /* Scroll-down indicator */

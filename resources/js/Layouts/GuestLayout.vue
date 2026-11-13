@@ -11,7 +11,7 @@ import { Link } from '@inertiajs/vue3';
 
             <Link href="/" class="relative flex items-center gap-3">
                 <img src="/logo.svg" alt="QUEENSONS crown logo" class="w-10 h-10" />
-                <span class="font-display text-2xl tracking-widest">QUEENSONS</span>
+                <span class="font-display text-2xl tracking-tight font-extrabold">queensons<span class="text-gold">.</span></span>
             </Link>
 
             <div class="relative">
@@ -34,7 +34,7 @@ import { Link } from '@inertiajs/vue3';
         <div class="flex flex-col items-center justify-center px-6 py-12">
             <Link href="/" class="lg:hidden flex items-center gap-2.5 mb-8">
                 <img src="/logo.svg" alt="QUEENSONS crown logo" class="w-10 h-10" />
-                <span class="font-display text-2xl tracking-widest text-navy-700">QUEENSONS</span>
+                <span class="font-display text-2xl tracking-tight font-extrabold text-navy-700">queensons<span class="text-gold">.</span></span>
             </Link>
 
             <div class="w-full sm:max-w-md">

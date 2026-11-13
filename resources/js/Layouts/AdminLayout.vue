@@ -45,7 +45,7 @@ const current = computed(() => page.url);
         <aside :class="[collapsed ? 'w-16' : 'w-60', 'bg-navy-800 text-white flex flex-col transition-all shrink-0']">
             <div class="h-16 flex items-center justify-center border-b border-navy-600">
                 <img src="/logo.svg" alt="" class="w-8 h-8" />
-                <span v-if="!collapsed" class="font-display tracking-widest text-lg text-gold ml-2">QUEENSONS</span>
+                <span v-if="!collapsed" class="font-display tracking-tight font-extrabold text-lg text-gold ml-2">queensons<span class="text-gold">.</span></span>
             </div>
             <nav class="flex-1 overflow-y-auto py-4 space-y-0.5">
                 <Link v-for="s in sections" :key="s.href" :href="s.href"

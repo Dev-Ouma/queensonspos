@@ -2,9 +2,45 @@
 import StorefrontLayout from '@/Layouts/StorefrontLayout.vue';
 import ProductCard from '@/Components/ProductCard.vue';
 import { Link, Head, usePage } from '@inertiajs/vue3';
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 
-defineProps({ banners: Array, featured: Array, newArrivals: Array, categories: Array });
+const props = defineProps({ banners: Array, featured: Array, newArrivals: Array, categories: Array });
+
+/* Category bubbles */
+const bubbles = [
+    { label: 'Dresses', img: 'photo-1539533018447-63fcce2678e3', href: '/shop?category=dresses' },
+    { label: 'Tops', img: 'photo-1485968579580-b6d095142e6e', href: '/shop?category=tops-blouses' },
+    { label: 'Office Wear', img: 'photo-1496747611176-843222e1e57c', href: '/shop?category=office-wear' },
+    { label: 'Shoes', img: 'photo-1549298916-b41d501d3772', href: '/shop?category=shoes' },
+    { label: 'Handbags', img: 'photo-1548036328-c9fa89d128fa', href: '/shop?category=handbags' },
+    { label: 'Accessories', img: 'photo-1515562141207-7a88fb7ce338', href: '/shop?category=accessories' },
+    { label: 'New Arrivals', img: 'photo-1583496661160-fb5886a0aaaa', href: '/shop?collection=new-arrivals' },
+];
+
+/* Recently viewed (stored by the product page) */
+const recent = ref([]);
+
+const deals = computed(() => [...props.featured, ...props.newArrivals]
+    .filter((p, i, a) => p.compare_at_cents && a.findIndex(x => x.id === p.id) === i));
+
+const rails = computed(() => [
+    { title: 'Your recently viewed items', sub: 'Pick up where you left off', href: '/shop', items: recent.value },
+    { title: "Today's deals", sub: 'Marked-down styles, while stock lasts', href: '/shop?sort=price_asc', items: deals.value },
+    { title: 'Trending in women\'s fashion', sub: 'Our most-loved pieces right now', href: '/shop?collection=best-sellers', items: props.featured },
+    { title: 'New arrivals', sub: 'Just landed this week', href: '/shop?collection=new-arrivals', items: props.newArrivals },
+]);
+
+const sideTiles = [
+    { eyebrow: 'Workwear edit', title: 'Office looks from KES 2,500', img: 'photo-1496747611176-843222e1e57c', href: '/shop?category=office-wear' },
+    { eyebrow: 'Finish the look', title: 'Bags & accessories', img: 'photo-1548036328-c9fa89d128fa', href: '/shop?category=handbags' },
+];
+
+const trust = [
+    { title: 'Pay with M-Pesa', sub: 'Or Visa and Mastercard' },
+    { title: 'Free delivery', sub: 'On orders above KES 5,000' },
+    { title: 'Easy returns', sub: '7-day returns on unworn items' },
+    { title: 'Quality checked', sub: 'Every item inspected before dispatch' },
+];
 
 const u = (id, w) => `https://images.unsplash.com/${id}?q=80&w=${w}&auto=format&fit=crop`;
 
@@ -66,15 +102,6 @@ const catTiles = [
 const email = ref('');
 const subscribed = ref(false);
 
-/* Hero mouse parallax */
-const px = ref(0);
-const py = ref(0);
-function onHeroMove(e) {
-    const r = e.currentTarget.getBoundingClientRect();
-    px.value = ((e.clientX - r.left) / r.width - 0.5) * 2;
-    py.value = ((e.clientY - r.top) / r.height - 0.5) * 2;
-}
-function resetHero() { px.value = 0; py.value = 0; }
 
 /* Flash-sale countdown to next midnight */
 const countdown = ref({ h: '00', m: '00', s: '00' });
@@ -101,6 +128,7 @@ function onTilt(e) {
 function resetTilt(e) { e.currentTarget.style.transform = ''; }
 
 onMounted(() => {
+    try { recent.value = JSON.parse(localStorage.getItem('q_recent') || '[]').slice(0, 12); } catch { recent.value = []; }
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (!reduced && slides.length > 1) {
         slideTimer = setInterval(() => { slide.value = (slide.value + 1) % slides.length; }, 6000);
@@ -123,291 +151,115 @@ const marqueeItems = content.marquee || [];
 </script>
 
 <template>
-    <Head title="QUEENSONS — Style Beyond Seasons" />
+    <Head title="QUEENSONS — Women's fashion, shoes, bags and more" />
     <StorefrontLayout>
-        <!-- Editorial hero slideshow -->
-        <section v-if="slides.length" class="relative overflow-hidden bg-navy-900 text-white min-h-[560px] md:min-h-[680px] flex items-center"
-                 @mousemove="onHeroMove" @mouseleave="resetHero">
-            <template v-for="(s, si) in slides" :key="si">
-                <img :src="s.img" alt="" aria-hidden="true"
-                     class="hero-slide absolute -inset-4 w-[calc(100%+2rem)] h-[calc(100%+2rem)] object-cover object-top will-change-transform"
-                     :class="si === slide ? 'opacity-80 animate-kenburns' : 'opacity-0'"
-                     :style="{ translate: `${px * -12}px ${py * -8}px` }" />
-            </template>
-            <div class="absolute inset-0 bg-gradient-to-r from-navy-900/90 via-navy-900/55 to-navy-900/10"></div>
-            <div class="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-gold/10 blur-3xl"></div>
-
-            <div class="relative max-w-7xl mx-auto px-4 w-full py-24" :style="{ translate: `${px * 8}px ${py * 5}px` }">
-                <div class="max-w-xl" :key="slide">
-                    <div class="flex items-center gap-3 mb-6 animate-fade-up">
-                        <img src="/logo.svg" alt="" class="w-10 h-10" />
-                        <div class="h-px w-16 bg-gold/70"></div>
-                        <p class="eyebrow text-gold">{{ slides[slide].eyebrow }}</p>
-                    </div>
-                    <h1 class="font-display text-5xl md:text-7xl leading-[1.05]">
-                        <span class="block animate-fade-up" style="animation-delay:.1s">{{ slides[slide].line1 }}</span>
-                        <span class="block italic text-gold-light animate-fade-up" style="animation-delay:.3s">{{ slides[slide].line2 }}</span>
+        <div class="max-w-7xl mx-auto px-4">
+            <!-- Promo banner carousel -->
+            <div class="mt-4 grid lg:grid-cols-3 gap-4">
+            <section v-if="slides.length" class="lg:col-span-2 relative rounded-2xl overflow-hidden bg-navy-900 text-white h-[300px] md:h-[380px]">
+                <template v-for="(s, si) in slides" :key="si">
+                    <img :src="s.img" alt="" aria-hidden="true"
+                         class="hero-slide absolute inset-0 w-full h-full object-cover object-top"
+                         :class="si === slide ? 'opacity-100' : 'opacity-0'" />
+                </template>
+                <div class="absolute inset-0 bg-gradient-to-r from-navy-900/90 via-navy-900/50 to-transparent"></div>
+                <div class="relative h-full flex flex-col justify-center px-8 md:px-14 max-w-xl">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-gold-light">{{ slides[slide].eyebrow }}</p>
+                    <h1 class="font-display font-extrabold text-3xl md:text-5xl leading-tight mt-2">
+                        {{ slides[slide].line1 }} {{ slides[slide].line2 }}
                     </h1>
-                    <p class="text-navy-100/90 mt-6 max-w-md text-[15px] leading-relaxed animate-fade-up" style="animation-delay:.45s">
-                        Elegant women's fashion — dresses, office wear, shoes, bags and accessories.
-                        Designed to last, priced to love.
-                    </p>
-                    <div class="mt-10 flex flex-wrap gap-4 animate-fade-up" style="animation-delay:.6s">
-                        <Link href="/shop" class="sheen bg-emerald-600 hover:bg-emerald-700 text-white px-9 py-3.5 rounded-full text-sm font-semibold transition">
-                            Shop the Collection
-                        </Link>
-                        <Link href="/shop?collection=new-arrivals"
-                              class="border border-gold/80 text-gold-light hover:bg-gold hover:text-navy-900 px-9 py-3.5 rounded-full text-sm font-semibold transition">
-                            New Arrivals
-                        </Link>
+                    <p class="text-sm md:text-base text-white/85 mt-3">Dresses, office wear, shoes, bags and accessories. Pay with M-Pesa.</p>
+                    <Link href="/shop" class="mt-6 self-start bg-white text-navy-900 font-semibold text-sm rounded-full px-7 py-3 hover:bg-gray-100">Shop now</Link>
+                </div>
+                <button v-if="slides.length > 1" @click="slide = (slide - 1 + slides.length) % slides.length" aria-label="Previous slide"
+                        class="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 text-navy-900 flex items-center justify-center shadow">‹</button>
+                <button v-if="slides.length > 1" @click="slide = (slide + 1) % slides.length" aria-label="Next slide"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 text-navy-900 flex items-center justify-center shadow">›</button>
+                <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                    <button v-for="(s, si) in slides" :key="si" @click="slide = si" :aria-label="`Slide ${si + 1}`"
+                            :class="['h-2 rounded-full transition-all', si === slide ? 'w-6 bg-white' : 'w-2 bg-white/50']"></button>
+                </div>
+            </section>
+            <div class="grid grid-cols-2 lg:grid-cols-1 gap-4">
+                <Link v-for="t in sideTiles" :key="t.title" :href="t.href" class="group relative rounded-2xl overflow-hidden h-[150px] md:h-[182px]">
+                    <img :src="u(t.img, 700)" alt="" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition duration-300" />
+                    <div class="absolute inset-0 bg-gradient-to-r from-navy-900/80 to-navy-900/10"></div>
+                    <div class="relative h-full flex flex-col justify-end p-5 text-white">
+                        <div class="text-[11px] font-semibold uppercase tracking-wider text-gold-light">{{ t.eyebrow }}</div>
+                        <div class="text-lg font-bold leading-tight">{{ t.title }}</div>
+                        <span class="text-xs mt-1 underline">Shop now</span>
                     </div>
-                </div>
+                </Link>
+            </div>
             </div>
 
-            <!-- Slide dots -->
-            <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2.5">
-                <button v-for="(s, si) in slides" :key="si" @click="slide = si"
-                        :aria-label="`Slide ${si + 1}`"
-                        :class="['h-1.5 rounded-full transition-all duration-500', si === slide ? 'w-8 bg-gold' : 'w-3 bg-white/40 hover:bg-white/70']"></button>
-            </div>
-            <!-- Scroll hint -->
-            <div class="scroll-hint absolute bottom-7 right-8 hidden md:flex flex-col items-center text-gold/80" aria-hidden="true">
-                <span class="text-[10px] tracking-[0.3em] uppercase rotate-90 origin-center translate-y-[-14px]">Scroll</span>
-                <svg class="w-4 h-4 mt-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="1.5" d="M19 14l-7 7-7-7M12 21V3"/></svg>
-            </div>
-            <div class="absolute bottom-0 inset-x-0 rule-gold"></div>
-        </section>
-
-        <!-- Marquee strip -->
-        <div v-if="marqueeItems.length" class="bg-navy-900 border-t border-navy-800 py-3 overflow-hidden" aria-hidden="true">
-            <div class="marquee-track">
-                <div v-for="n in 2" :key="n" class="flex shrink-0">
-                    <span v-for="(m, mi) in marqueeItems" :key="mi" class="flex items-center text-gold-light/90 text-xs tracking-[0.25em] uppercase whitespace-nowrap">
-                        <span class="px-6">{{ m }}</span><span class="text-gold">✦</span>
-                    </span>
+            <!-- Category bubbles -->
+            <section class="mt-10">
+                <h2 class="text-xl md:text-2xl font-bold">Shop by category</h2>
+                <div class="mt-5 grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-4">
+                    <Link v-for="c in bubbles" :key="c.label" :href="c.href" class="group text-center">
+                        <div class="aspect-square rounded-full overflow-hidden bg-gray-100 mx-auto max-w-[130px]">
+                            <img :src="u(c.img, 300)" :alt="c.label" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
+                        </div>
+                        <div class="text-sm font-semibold mt-2 group-hover:underline">{{ c.label }}</div>
+                    </Link>
                 </div>
-            </div>
-        </div>
+            </section>
 
-        <!-- Flash sale countdown -->
-        <section v-if="flashSale.enabled" class="max-w-7xl mx-auto px-4 mt-12" v-reveal>
-            <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-navy-900 via-navy-800 to-navy-900 text-white border border-gold/30 px-8 py-8 flex flex-col md:flex-row items-center justify-between gap-6">
-                <div class="absolute -top-10 right-24 w-40 h-40 rounded-full bg-gold/10 blur-2xl" aria-hidden="true"></div>
-                <div class="relative">
-                    <p class="eyebrow text-gold mb-1.5">{{ flashSale.eyebrow }}</p>
-                    <div class="font-display text-2xl md:text-3xl">{{ flashSale.title }} — <span class="italic text-gold-light">{{ flashSale.highlight }}</span></div>
-                    <p class="text-navy-100/80 text-sm mt-1.5">{{ flashSale.subtitle }}</p>
+            <!-- Flash deals -->
+            <section v-if="flashSale.enabled" class="mt-12 rounded-2xl bg-red-50 border border-red-100 px-6 py-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <div class="text-xs font-bold uppercase text-red-600">{{ flashSale.eyebrow }}</div>
+                    <div class="text-xl font-bold mt-0.5">{{ flashSale.title }} <span class="text-red-600">{{ flashSale.highlight }}</span></div>
+                    <div class="text-sm text-gray-600">{{ flashSale.subtitle }}</div>
                 </div>
-                <div class="relative flex items-center gap-5">
-                    <div class="flex gap-2 text-center" role="timer" aria-label="Sale ends in">
-                        <div v-for="part in [{ v: countdown.h, l: 'HRS' }, { v: countdown.m, l: 'MIN' }, { v: countdown.s, l: 'SEC' }]" :key="part.l"
-                             class="bg-navy-700/80 border border-gold/20 rounded-xl px-3.5 py-2.5 min-w-[64px]">
-                            <div class="font-display text-2xl text-gold-light tabular-nums">{{ part.v }}</div>
-                            <div class="text-[9px] tracking-[0.25em] text-navy-100/70 mt-0.5">{{ part.l }}</div>
+                <div class="flex items-center gap-4">
+                    <div class="text-sm" role="timer" aria-label="Sale ends in">
+                        Ends in <span class="font-bold tabular-nums text-red-600">{{ countdown.h }}:{{ countdown.m }}:{{ countdown.s }}</span>
+                    </div>
+                    <Link :href="flashSale.link || '/shop'" class="bg-red-600 hover:bg-red-700 text-white rounded-full px-6 py-2.5 text-sm font-semibold whitespace-nowrap">{{ flashSale.cta || 'Shop deals' }}</Link>
+                </div>
+            </section>
+
+            <!-- Rails -->
+            <section v-for="rail in rails" :key="rail.title" class="mt-12">
+                <template v-if="rail.items.length">
+                    <div class="flex items-end justify-between">
+                        <div>
+                            <h2 class="text-xl md:text-2xl font-bold">{{ rail.title }}</h2>
+                            <p class="text-sm text-gray-500">{{ rail.sub }}</p>
+                        </div>
+                        <Link :href="rail.href" class="text-sm font-semibold underline whitespace-nowrap">See all</Link>
+                    </div>
+                    <div class="mt-4 flex gap-4 overflow-x-auto snap-x pb-2 -mx-1 px-1">
+                        <div v-for="p in rail.items" :key="p.id" class="snap-start shrink-0 w-[46%] sm:w-[30%] md:w-[22%] lg:w-[15.5%]">
+                            <ProductCard :product="p" layout="rail" />
                         </div>
                     </div>
-                    <Link :href="flashSale.link || '/shop'" class="sheen bg-gold text-navy-900 hover:bg-gold-light rounded-full px-7 py-3 text-sm font-semibold transition whitespace-nowrap">
-                        {{ flashSale.cta }}
-                    </Link>
-                </div>
-            </div>
-        </section>
+                </template>
+            </section>
 
-        <!-- Banners -->
-        <section v-if="banners.length" class="max-w-7xl mx-auto px-4 mt-12 grid md:grid-cols-2 gap-5">
-            <Link v-for="(b, bi) in banners" :key="b.id" :href="b.link || '/shop'" v-reveal="bi * 120"
-                  class="lift group relative overflow-hidden rounded-2xl border border-gold/30 bg-gradient-to-br from-navy-700 to-navy-900 text-white p-10">
-                <div class="eyebrow text-gold mb-3">The Edit</div>
-                <div class="font-display text-3xl leading-snug">{{ b.title }}</div>
-                <div class="text-navy-100/80 text-sm mt-2 max-w-sm">{{ b.subtitle }}</div>
-                <span class="inline-flex items-center gap-2 text-gold-light text-xs mt-6 tracking-[0.2em] uppercase group-hover:gap-4 transition-all">
-                    Shop the edit <span aria-hidden="true">→</span>
-                </span>
-            </Link>
-        </section>
-
-        <!-- Category showcase tiles -->
-        <section class="max-w-7xl mx-auto px-4 mt-20">
-            <div class="text-center mb-10" v-reveal>
-                <p class="eyebrow text-gold-dark mb-2">Curated For You</p>
-                <h2 class="font-display text-3xl mb-3">Shop by Category</h2>
-                <div class="rule-gold max-w-[120px] mx-auto"></div>
-            </div>
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-4 md:auto-rows-[220px]">
-                <Link v-for="(t, ti) in catTiles" :key="t.label" :href="t.href" v-reveal="ti * 100"
-                      @mousemove="onTilt" @mouseleave="resetTilt"
-                      :class="['group relative overflow-hidden rounded-2xl min-h-[180px] transition-transform duration-200 will-change-transform', t.span]">
-                    <img :src="u(t.img, 900)" :alt="t.label"
-                         class="absolute inset-0 w-full h-full object-cover transition duration-700 group-hover:scale-110" />
-                    <div class="absolute inset-0 bg-gradient-to-t from-navy-900/80 via-navy-900/20 to-transparent"></div>
-                    <div class="absolute bottom-0 inset-x-0 p-5 flex items-end justify-between">
-                        <span class="font-display text-xl text-white">{{ t.label }}</span>
-                        <span class="text-gold-light text-xs tracking-[0.2em] uppercase opacity-0 group-hover:opacity-100 transition">Shop →</span>
+            <!-- Promo tiles from CMS banners -->
+            <section v-if="banners.length" class="mt-12 grid md:grid-cols-2 gap-4">
+                <Link v-for="(b, bi) in banners" :key="b.id" :href="b.link || '/shop'"
+                      class="group relative overflow-hidden rounded-2xl min-h-[200px] flex items-end p-6"
+                      :class="bi % 2 ? 'bg-butter text-navy-900' : 'bg-emerald-100 text-navy-900'">
+                    <div>
+                        <div class="text-2xl font-bold">{{ b.title }}</div>
+                        <div class="text-sm mt-1 opacity-80">{{ b.subtitle }}</div>
+                        <span class="inline-block mt-4 bg-navy-900 text-white rounded-full px-5 py-2 text-sm font-semibold group-hover:bg-navy-700">Shop now</span>
                     </div>
                 </Link>
-            </div>
-            <div class="flex flex-wrap justify-center gap-3 mt-8" v-reveal>
-                <Link v-for="c in categories" :key="c.id" :href="`/shop?category=${c.slug}`"
-                      class="border border-gray-200 hover:border-gold hover:text-gold-dark rounded-full px-6 py-2.5 text-sm tracking-wide transition">
-                    {{ c.name }}
-                </Link>
-            </div>
-        </section>
+            </section>
 
-        <!-- New arrivals -->
-        <section v-if="newArrivals.length" class="max-w-7xl mx-auto px-4 mt-20">
-            <div class="flex items-end justify-between mb-8" v-reveal>
-                <div>
-                    <p class="eyebrow text-gold-dark mb-1">Just Landed</p>
-                    <h2 class="font-display text-3xl">New Arrivals</h2>
+            <!-- Trust strip -->
+            <section class="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div v-for="t in trust" :key="t.title" class="rounded-xl border border-gray-200 p-4">
+                    <div class="font-semibold">{{ t.title }}</div>
+                    <div class="text-gray-500 text-xs mt-1">{{ t.sub }}</div>
                 </div>
-                <Link href="/shop?collection=new-arrivals" class="text-sm text-emerald-600 hover:underline">View all →</Link>
-            </div>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-                <div v-for="(p, pi) in newArrivals" :key="p.id" v-reveal="(pi % 4) * 90">
-                    <ProductCard :product="p" />
-                </div>
-            </div>
-        </section>
-
-        <!-- Editorial interlude -->
-        <section class="mt-24 bg-navy-900 text-white overflow-hidden" v-reveal>
-            <div class="max-w-7xl mx-auto grid md:grid-cols-2 items-center">
-                <div class="relative h-72 md:h-[420px] overflow-hidden group">
-                    <img :src="u('photo-1591047139829-d91aecb6caea', 1200)" alt="Tailored garment detail"
-                         class="absolute inset-0 w-full h-full object-cover transition duration-700 group-hover:scale-105" />
-                    <div class="absolute inset-0 bg-navy-900/20"></div>
-                </div>
-                <div class="px-8 md:px-16 py-14">
-                    <p class="eyebrow text-gold mb-3">The Queensons Standard</p>
-                    <h2 class="font-display text-3xl md:text-4xl leading-snug">
-                        Tailored finishes.<br /><span class="italic text-gold-light">Honest prices.</span>
-                    </h2>
-                    <p class="text-navy-100/85 text-sm mt-5 leading-relaxed max-w-md">
-                        Every piece is hand-checked before dispatch — stitching, lining, hardware.
-                        Quality fabrics and finishes without the premium markup.
-                    </p>
-                    <Link href="/shop" class="inline-block mt-8 border border-gold/70 text-gold-light hover:bg-gold hover:text-navy-900 px-8 py-3 rounded-full text-sm font-semibold transition">
-                        Discover the Collection
-                    </Link>
-                </div>
-            </div>
-        </section>
-
-        <!-- Stats band -->
-        <section v-if="stats.length" ref="statsEl" class="max-w-7xl mx-auto px-4 mt-20">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center" v-reveal>
-                <div v-for="(s, si) in stats" :key="s.label">
-                    <div class="font-display text-4xl md:text-5xl text-navy-700">
-                        {{ counts[si].toLocaleString() }}<span class="text-gold">{{ s.suffix }}</span>
-                    </div>
-                    <div class="text-xs tracking-[0.2em] uppercase text-gray-400 mt-2">{{ s.label }}</div>
-                </div>
-            </div>
-            <div class="rule-gold mt-12"></div>
-        </section>
-
-        <!-- Featured -->
-        <section v-if="featured.length" class="max-w-7xl mx-auto px-4 mt-20">
-            <div class="flex items-end justify-between mb-8" v-reveal>
-                <div>
-                    <p class="eyebrow text-gold-dark mb-1">House Favourites</p>
-                    <h2 class="font-display text-3xl">Featured</h2>
-                </div>
-                <Link href="/shop" class="text-sm text-emerald-600 hover:underline">Shop all →</Link>
-            </div>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-                <div v-for="(p, pi) in featured" :key="p.id" v-reveal="(pi % 4) * 90">
-                    <ProductCard :product="p" />
-                </div>
-            </div>
-        </section>
-
-        <!-- Testimonials -->
-        <section v-if="testimonials.length" class="bg-navy-50/60 mt-24 py-16" v-reveal>
-            <div class="max-w-3xl mx-auto px-4 text-center">
-                <p class="eyebrow text-gold-dark mb-2">Word of Mouth</p>
-                <h2 class="font-display text-3xl mb-10">Loved across Kenya</h2>
-                <div class="relative min-h-[150px]">
-                    <transition name="fade" mode="out-in">
-                        <blockquote :key="tIndex">
-                            <div class="text-gold text-2xl mb-4" aria-hidden="true">“</div>
-                            <p class="font-display text-xl md:text-2xl leading-relaxed text-navy-800">
-                                {{ testimonials[tIndex].quote }}
-                            </p>
-                            <footer class="mt-5 text-sm text-gray-500">
-                                <span class="font-semibold text-navy-700">{{ testimonials[tIndex].name }}</span> · {{ testimonials[tIndex].city }}
-                            </footer>
-                        </blockquote>
-                    </transition>
-                </div>
-                <div class="flex justify-center gap-2.5 mt-6">
-                    <button v-for="(t, i) in testimonials" :key="i" @click="tIndex = i"
-                            :aria-label="`Testimonial ${i + 1}`"
-                            :class="['h-1.5 rounded-full transition-all duration-500', i === tIndex ? 'w-8 bg-gold' : 'w-3 bg-navy-100 hover:bg-navy-600/40']"></button>
-                </div>
-            </div>
-        </section>
-
-        <!-- Gallery -->
-        <section class="max-w-7xl mx-auto px-4 mt-20">
-            <div class="text-center mb-10" v-reveal>
-                <p class="eyebrow text-gold-dark mb-2">The Lookbook</p>
-                <h2 class="font-display text-3xl mb-3">As Worn by You</h2>
-                <div class="rule-gold max-w-[120px] mx-auto"></div>
-            </div>
-            <div class="grid grid-cols-3 md:grid-cols-6 gap-3">
-                <Link v-for="(g, gi) in gallery" :key="g" href="/shop" v-reveal="gi * 70"
-                      class="group relative overflow-hidden rounded-xl aspect-[3/4]">
-                    <img :src="u(g, 600)" alt="Queensons lookbook style"
-                         class="absolute inset-0 w-full h-full object-cover transition duration-700 group-hover:scale-110" />
-                    <div class="absolute inset-0 bg-navy-900/0 group-hover:bg-navy-900/30 transition flex items-center justify-center">
-                        <span class="text-white text-xs tracking-[0.2em] uppercase opacity-0 group-hover:opacity-100 transition">Shop</span>
-                    </div>
-                </Link>
-            </div>
-        </section>
-
-        <!-- Newsletter -->
-        <section class="mt-24 bg-navy-900 text-white relative overflow-hidden" v-reveal>
-            <div class="absolute -top-20 -left-20 w-72 h-72 rounded-full bg-gold/10 blur-3xl"></div>
-            <div class="absolute -bottom-24 -right-16 w-80 h-80 rounded-full bg-navy-700/60 blur-3xl"></div>
-            <div class="relative max-w-2xl mx-auto px-4 py-16 text-center">
-                <img src="/logo.svg" alt="" class="w-12 h-12 mx-auto mb-5 animate-float" />
-                <p class="eyebrow text-gold mb-2">The Inner Circle</p>
-                <h2 class="font-display text-3xl">First looks, private drops.</h2>
-                <p class="text-navy-100/80 text-sm mt-3">New arrivals, members-only offers and styling notes — once a week, never spam.</p>
-                <form v-if="!subscribed" @submit.prevent="subscribed = true" class="mt-8 flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-                    <input v-model="email" type="email" required placeholder="your@email.com"
-                           class="flex-1 rounded-full border-navy-600 bg-navy-800/70 text-white placeholder-navy-100/50 text-sm px-5 py-3 focus:border-gold focus:ring-gold" />
-                    <button type="submit" class="sheen bg-gold text-navy-900 hover:bg-gold-light rounded-full px-7 py-3 text-sm font-semibold transition">
-                        Join
-                    </button>
-                </form>
-                <p v-else class="mt-8 text-gold-light text-sm">Karibu to the inner circle — watch your inbox. ✦</p>
-            </div>
-        </section>
-
-        <!-- Value props -->
-        <section class="max-w-7xl mx-auto px-4 mt-20 mb-4">
-            <div class="grid md:grid-cols-3 gap-10 text-center">
-                <div v-reveal>
-                    <div class="font-display text-gold-dark text-lg mb-2">I</div>
-                    <div class="font-semibold tracking-wide">Affordable Premium</div>
-                    <p class="text-sm text-gray-500 mt-2 max-w-xs mx-auto">Quality fabrics and finishes without the premium markup.</p>
-                </div>
-                <div v-reveal="120">
-                    <div class="font-display text-gold-dark text-lg mb-2">II</div>
-                    <div class="font-semibold tracking-wide">Fast Delivery</div>
-                    <p class="text-sm text-gray-500 mt-2 max-w-xs mx-auto">Nairobi within 24 hours, countrywide in 2–4 days.</p>
-                </div>
-                <div v-reveal="240">
-                    <div class="font-display text-gold-dark text-lg mb-2">III</div>
-                    <div class="font-semibold tracking-wide">Easy Returns</div>
-                    <p class="text-sm text-gray-500 mt-2 max-w-xs mx-auto">7-day returns on unworn items with tags attached.</p>
-                </div>
-            </div>
-        </section>
+            </section>
+        </div>
     </StorefrontLayout>
 </template>
 

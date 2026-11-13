@@ -6,16 +6,16 @@
     <title>Page Not Found — QUEENSONS</title>
     <link rel="icon" type="image/svg+xml" href="/logo.svg">
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=quicksand:400,500,600|playfair-display:500,600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600|bricolage-grotesque:600,800&display=swap" rel="stylesheet" />
     <style>
-        body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #051938; color: #fff; font-family: Quicksand, sans-serif; text-align: center; padding: 16px; }
-        .serif { font-family: 'Playfair Display', serif; }
-        .eyebrow { letter-spacing: .32em; text-transform: uppercase; font-size: .68rem; font-weight: 600; color: #C5A66A; }
+        body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #0B0817; color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; text-align: center; padding: 16px; }
+        .serif { font-family: 'Bricolage Grotesque', serif; }
+        .eyebrow { letter-spacing: .32em; text-transform: uppercase; font-size: .68rem; font-weight: 600; color: #FF5FA2; }
         h1 { font-size: 5rem; margin: .5rem 0 0; }
-        h1 em { color: #D9C296; }
+        h1 em { color: #FFB8D6; }
         p { color: rgba(198,211,232,.85); font-size: .9rem; max-width: 380px; margin: 1rem auto 2rem; line-height: 1.6; }
-        a { display: inline-block; background: #079447; color: #fff; text-decoration: none; padding: 12px 36px; border-radius: 999px; font-weight: 600; font-size: .9rem; }
-        a:hover { background: #067A3B; }
+        a { display: inline-block; background: #6C4BFF; color: #fff; text-decoration: none; padding: 12px 36px; border-radius: 999px; font-weight: 600; font-size: .9rem; }
+        a:hover { background: #5534E6; }
         .rule { height: 1px; width: 120px; margin: 1.2rem auto 0; background: linear-gradient(to right, transparent, rgba(197,166,106,.7), transparent); }
     </style>
 </head>

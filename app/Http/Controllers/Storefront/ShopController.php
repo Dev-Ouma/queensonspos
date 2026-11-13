@@ -123,6 +123,37 @@ class ShopController extends Controller
         return $products->map(fn ($p) => $this->card($p))->values();
     }
 
+    /** Units sold per product: paid online orders plus completed POS sales. */
+    private ?array $soldMap = null;
+
+    private function soldFor(int $productId): int
+    {
+        if ($this->soldMap === null) {
+            $online = \DB::table('order_items')
+                ->join('orders', 'orders.id', '=', 'order_items.order_id')
+                ->join('product_variants', 'product_variants.id', '=', 'order_items.variant_id')
+                ->where('orders.payment_status', 'paid')
+                ->groupBy('product_variants.product_id')
+                ->selectRaw('product_variants.product_id as pid, SUM(order_items.qty) as n')
+                ->pluck('n', 'pid');
+            $pos = \DB::table('pos_sale_items')
+                ->join('pos_sales', 'pos_sales.id', '=', 'pos_sale_items.pos_sale_id')
+                ->join('product_variants', 'product_variants.id', '=', 'pos_sale_items.variant_id')
+                ->where('pos_sales.status', 'completed')
+                ->groupBy('product_variants.product_id')
+                ->selectRaw('product_variants.product_id as pid, SUM(pos_sale_items.qty) as n')
+                ->pluck('n', 'pid');
+            $this->soldMap = [];
+            foreach ([$online, $pos] as $set) {
+                foreach ($set as $pid => $n) {
+                    $this->soldMap[$pid] = ($this->soldMap[$pid] ?? 0) + (int) $n;
+                }
+            }
+        }
+
+        return $this->soldMap[$productId] ?? 0;
+    }
+
     private function card(Product $p): array
     {
         $min = $p->variants->min('price_cents');
@@ -137,6 +168,7 @@ class ShopController extends Controller
             'colors' => $p->variants->pluck('color')->unique()->values(),
             'in_stock' => $p->variants->sum(fn ($v) => $v->availableQty()) > 0,
             'is_new' => $p->created_at?->gt(now()->subDays(30)) ?? false,
+            'sold' => $this->soldFor($p->id),
         ];
     }
 }
